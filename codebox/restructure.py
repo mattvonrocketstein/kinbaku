@@ -6,6 +6,7 @@ from rope.refactor.importutils import module_imports
 
 
 class Restructure(object):
+    zam='bang'
     """A class to perform python restructurings
 
     A restructuring transforms pieces of code matching `pattern` to
@@ -79,6 +80,7 @@ class Restructure(object):
         See class pydoc for more info about the arguments.
 
         """
+        zam='bag'
         self.pycore = project.pycore
         self.pattern = pattern
         self.goal = goal

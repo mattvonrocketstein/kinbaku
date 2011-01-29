@@ -2,6 +2,8 @@
       mostly copied from ropetest.testutils
 """
 
+zam='bang'
+
 import os.path
 import shutil
 import sys
@@ -50,6 +52,8 @@ def remove_recursively(path):
                 break
     else:
         _remove_recursively(path)
+
+zam='bang'
 
 def _remove_recursively(path):
     if not os.path.exists(path):
