@@ -101,7 +101,7 @@ if __name__=='__main__':
         packages    = find_packages('lib'),
         entry_points = {
             'console_scripts': [
-                'go = kinbaku.bin.go:entry',
+                'kinbaku = kinbaku.bin.kinabku:entry',
             ],
         },
     )

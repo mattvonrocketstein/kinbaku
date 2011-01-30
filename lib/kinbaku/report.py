@@ -107,9 +107,10 @@ def report(*args, **kargs):
             print
 
     if kargs and not used_kargs:
-        print '\tkargs='
+        print '\n\tkargs({n})='.format(n=len(kargs))
         #flush = kargs.pop('flush',False)
-        console.color(str(kargs))
+        for k,v in kargs.items():
+            print "\t  {k} {v}".format(k=console.red(str(k)),v=console.blue(str(v)).strip())
 
     #if flush:
     #    sys.stdout.flush() # is this even working with ipython?
