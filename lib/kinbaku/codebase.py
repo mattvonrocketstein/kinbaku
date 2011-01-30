@@ -15,16 +15,47 @@ from rope.refactor import restructure
 from rope.contrib import generate
 
 from kinbaku.report import console
-from kinbaku.util import divider, remove_recursively, report, is_python, groupby
+from kinbaku.util import divider, remove_recursively, report, is_python, groupby, _import
+from kinbaku.types import Match
 
-class Match(object):
-    def __str__(self):
-        return console.color(str(self.__dict__)).strip()
-    __repr__=__str__
-    def __init__(self, **kargs):
-        for k,v in kargs.items(): setattr(self,k,v)
+USAGE = "codebase subparser usage "
+class CBPlugin(object):
+    @staticmethod
+    def parse_args(args, options):
+        """ receives cascaded args/options """
+        report('codebase cl', args, options)
+        if not args:
+            report("Expected args")
+        name, args = args[0], args[1:] # SNIP
+        path = options.path #HACK.. extract real kargs
+        if not name and path:
+            print USAGE
+        with CodeBase(path,gloves_off=True) as codebase:
+            try:
+                func = getattr(codebase, name)
+            except AttributeError:
+                report("Plugin@{plugin} is not publishing a subparser for \"{name}\"",plugin=codebase,name=name)
+                sys.exit()
+            report("running {f} with {a}, {k}",f=func.__name__,a=args,k=options)
+            result = func(*args)
+            CBPlugin.display_results(result)
 
-class CodeBaseContext(object):
+    @staticmethod
+    def display_results(result):
+       """
+       #divider(msg='inside context')
+       #report("codebase", codebase) #report("  test_files: "); report(*[fname for fname in codebase])
+       #test_search = codebase.search("zam"); #report("  test_search: {results}",results=str(test_search))
+       #import IPython;IPython.Shell.IPShellEmbed(argv=[])()
+       """
+       if isinstance(result,list):
+           report(*result)
+       elif isinstance(result,dict):
+           report(**result)
+       else:
+           report("Not sure how to deal with answer:", result)
+
+class CBContext(object):
     """ azucar syntactico: contextmanager protocol """
 
     def __exit__(self, type, value, tb):
@@ -41,12 +72,13 @@ class CodeBaseContext(object):
         report("  running _open")
         return self
 
-class CodeSandbox(object):
+class Sandbox(object):
     """ """
     def __mod__(self,fpath):
         """ inverse of __getitem__, demirrors a fpath back into
             the original codebase.
         """
+        raise NotImplemented
 
     def __getitem__(self,fpath):
         """ mirrors a fpath into sandbox:
@@ -84,9 +116,17 @@ class CodeSandbox(object):
             return gettempdir()
 
 
-class CodeBase(CodeBaseContext, CodeSandbox):
+class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
 
+    #codebox = '/home/matt/code/kinbaku/codebox'
+    #with CodeBase(codebox, gloves_off=True) as codebase:
+        #divider(msg='inside context')
+        #report("codebase", codebase) #report("  test_files: "); report(*[fname for fname in codebase])
+        #test_search = codebase.search("zam"); #report("  test_search: {results}",results=str(test_search))
+        #import IPython;IPython.Shell.IPShellEmbed(argv=[])()
+        #for x in test_search: print x
+        #print 'next', codebase.next() #search(codebase, name)
 
     @classmethod
     def spawn(kls):
@@ -94,6 +134,13 @@ class CodeBase(CodeBaseContext, CodeSandbox):
         from tempfile import mktemp
         root = mktemp(dir=kls.shadow_container(), prefix='codebase_')
         return kls(root)
+
+    def stats(self):
+        num_files = len(self.files())
+        pynum_files = len(self.files(python=True))
+        return dict(number_of_files = num_files,
+                    number_of_python_files=pynum_files,
+                    )
 
     def __init__(self, root, gloves_off=False, **rope_project_options):
         """ """
@@ -132,7 +179,7 @@ class CodeBase(CodeBaseContext, CodeSandbox):
         result = self._search(name)
 
         out=[]
-        for match1 in result['change_map']:
+        for match1 in result.get('change_map',[]):
             for match2 in match1['matches']:
                 out.append(Match(search=name,**match2))
         return out
@@ -188,3 +235,4 @@ class CodeBase(CodeBaseContext, CodeSandbox):
             out.update(change_map=change_map)
         out.update(dict(moved = changes.get_changed_resources()))
         return out
+plugin=CodeBase

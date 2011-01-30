@@ -7,6 +7,27 @@ from path import path
 
 from kinbaku.report import report, console
 
+def _import(name):
+    """
+        dear __import__,
+          I'm breaking up with you.
+          You never work the way I expect.
+
+    """
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+
+def is_string(obj):
+    """ the RightWay(tm) to test for stringhood.
+
+         TODO: patch the module to insert also django's
+               safe strings?
+    """
+    return type(obj) in types.StringTypes
+
 def groupby(lst,N):
   """ returns a list with rows of length N, uses as many rows as it takes.
       (the last row is guaranteed to have no more than N elements, but it
