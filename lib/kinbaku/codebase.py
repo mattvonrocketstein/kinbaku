@@ -14,22 +14,38 @@ from rope.base.project import Project
 from rope.refactor import restructure
 from rope.contrib import generate
 
+from kinbaku import analysis
 from kinbaku.report import console
-from kinbaku.util import divider, remove_recursively, report, is_python, groupby, _import
 from kinbaku.types import Match
 
+from kinbaku.util import divider, remove_recursively
+from kinbaku.util import report, is_python, groupby, _import
+
 USAGE = "codebase subparser usage "
+
+import pylint
+
 class CBPlugin(object):
+    """ """
     @staticmethod
     def parse_args(args, options):
         """ receives cascaded args/options """
-        report('codebase cl', args, options)
+        report(' ', args, options)
         if not args:
             report("Expected args")
-        name, args = args[0], args[1:] # SNIP
+        try:
+            name, args = args[0], args[1:] # SNIP
+        except IndexError:
+            report("Expected ie codebase search")
+            sys.exit()
         path = options.path #HACK.. extract real kargs
         if not name and path:
             print USAGE
+
+        if not os.path.exists(path):
+            path = os.getcwd()
+            report("USING PATH", path)
+
         with CodeBase(path,gloves_off=True) as codebase:
             try:
                 func = getattr(codebase, name)
@@ -43,11 +59,11 @@ class CBPlugin(object):
     @staticmethod
     def display_results(result):
        """
+       """
        #divider(msg='inside context')
        #report("codebase", codebase) #report("  test_files: "); report(*[fname for fname in codebase])
-       #test_search = codebase.search("zam"); #report("  test_search: {results}",results=str(test_search))
+       #test_search = codebase.search("zam); #report("  test_search: {results}",results=str(test_search))
        #import IPython;IPython.Shell.IPShellEmbed(argv=[])()
-       """
        if isinstance(result,list):
            report(*result)
        elif isinstance(result,dict):
@@ -57,7 +73,6 @@ class CBPlugin(object):
 
 class CBContext(object):
     """ azucar syntactico: contextmanager protocol """
-
     def __exit__(self, type, value, tb):
         divider(msg=" __exit__ ")
         if not any([type, value, tb]):
@@ -115,6 +130,12 @@ class Sandbox(object):
         else:
             return gettempdir()
 
+def map_over_files(func):
+    def likefilelines(self, *args,**kargs):
+        return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
+    return likefilelines
+
+
 
 class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
@@ -135,16 +156,34 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         root = mktemp(dir=kls.shadow_container(), prefix='codebase_')
         return kls(root)
 
+    count_files    = property(lambda self: len(self.files()))
+    count_py_files = property(lambda self: len(self.files(python=True)))
+    count_lines    = property(lambda self: sum(self.file_lines(python=True).values()))
+
+    def file_comments(self, *args, **kargs):
+        pass
+
+    file_lines    = map_over_files(analysis.count_lines)
+    word_summary  = map_over_files(analysis.word_summary)
+    file_comments = map_over_files(analysis.get_comments)
+    file_flakes   = map_over_files(analysis.pyflakes)
+
+    def pyflakes(self):
+         """ adapted from pyflakes.scripts.pyflakes """
+
     def stats(self):
-        num_files = len(self.files())
-        pynum_files = len(self.files(python=True))
-        return dict(number_of_files = num_files,
-                    number_of_python_files=pynum_files,
+        ws = self.word_summary()
+        ws.update(combine_word_summary(ws))
+        words_in_all_files = [ ws[fpath].keys() for fpath in ws ]
+        return dict( file_count    = self.count_files,
+                     py_file_count = self.count_py_files,
+                     lines_count  = self.count_lines,
+                     word_summary  = ws,
+                     valid=[fpylint(fpath) for fpath in self.files(python=True)],
                     )
 
     def __init__(self, root, gloves_off=False, **rope_project_options):
         """ """
-
         def create_shadow(self):
             """ returns path to a shadow of root """
             name         = "xyz" # TODO: compute name
@@ -156,9 +195,11 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                     report("Gloves are off, killing ",path)
                     #remove_recursively(path)
                 else:
-                    raise Exception, "If the gloves aren't off, the shadow should be uninhabited.."
+                    err = "If the gloves aren't off, the shadow should be uninhabited.."
+                    raise Exception, err
             return path
-
+        if not os.path.exists(root):
+            raise Exception, "nonexistent path {p}".format(p=root)
         self.pth_root   = root
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
@@ -220,10 +261,10 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                     lineno  = data1.replace('-','').split(',')[0]
                     lineno  = int(lineno)
                     lineno += 3
-                    match   = dict(real_path = real_path,   # actually it's pth_shadow-relative
-                                   line=line[1:],           # snips off the "-" from the diff
-                                   lineno=lineno,           # fully adjusted.
-                                   )
+                    match   = dict( real_path = real_path,   # actually it's pth_shadow-relative
+                                    line=line[1:],           # snips off the "-" from the diff
+                                    lineno=lineno, )         # fully adjusted.
+
                     matches.append(match)
 
                 change_map.append(dict(real_path = real_path,
@@ -236,3 +277,6 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         out.update(dict(moved = changes.get_changed_resources()))
         return out
 plugin=CodeBase
+
+if __name__=='__main__':
+    import IPython;IPython.Shell.IPShellEmbed(argv=[])()

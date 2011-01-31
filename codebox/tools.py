@@ -10,7 +10,7 @@ import sys
 
 import rope.base.project
 from rope.contrib import generate
-
+print random.choice
 def sample_project(root=None, foldername=None, **kwds):
     if root is None:
         root = 'sample_project'

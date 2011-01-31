@@ -63,7 +63,7 @@ def whoami():
     return inspect.stack()[1][3]
 
 def whosdaddy():
-    """ displays information about the caller's caller
+    """ displays information about the caller's caller149
     """
     x = inspect.stack()[2]
     frame = x[0]
@@ -88,12 +88,18 @@ def report(*args, **kargs):
     used_kargs=False
     if len(args)==1:
         main=args[0]
-        try:
-            print console.color(main.format(**kargs)).strip()
-        except KeyError:
-            print console.color(main)#,kargs
+        ## If it can be formatted, apply kargs towards that effort
+        if hasattr(main,'format'):
+            try:
+                print console.color(main.format(**kargs)).strip()
+            except KeyError:
+                print console.color(main)#,kargs
+            else:
+                used_kargs = True
+
+        ## Otherwise, str it and send it to color console
         else:
-            used_kargs = True
+            print console.color(str(main))
 
     elif args:
         print '\n        args=',
