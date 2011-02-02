@@ -53,8 +53,10 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         assert path
         return kls(path,gloves_off=True)
 
+    @publish_to_commandline
     def stats(self):
         """ interface: stats """
+        from kinbaku.analysis import *
         ws = self.word_summary()
         ws.update(combine_word_summary(ws))
         words_in_all_files = [ ws[fpath].keys() for fpath in ws ]
@@ -62,7 +64,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                      py_file_count = self.count_py_files,
                      lines_count  = self.count_lines,
                      word_summary  = ws,
-                     valid=[fpylint(fpath) for fpath in self.files(python=True)],
+                     valid=[pylint(fpath) for fpath in self.files(python=True)],
                     )
 
     def __init__(self, root, gloves_off=False, **rope_project_options):

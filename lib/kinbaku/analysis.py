@@ -39,8 +39,8 @@ def pylint(fpath):
     tmp=sys.exit
     sys.exit=lambda x: 1
     x=lint.Run(['--errors-only', fpath])
-    print dir(x)
-    raise Exception,x
+    return x# print x.cb_list_messages
+    #raise Exception,x
 
 def get_comments(fpath):
     """ """
@@ -48,7 +48,8 @@ def get_comments(fpath):
     #getsource
     #[ commentopen(fpath).readlines() if line.strip.startswith('#') ]
 
-def word_summary(fpath, remove_list=['']):
+def word_summary(fpath,
+                 remove_list='is a none return else for import def if'.split()):
     """ returns dict(word=frequency) """
     from string import punctuation
     N = 10
