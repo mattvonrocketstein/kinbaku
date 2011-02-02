@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import os, sys
-import errno
-import shutil
-import subprocess
+""" setup.py for kinbaku
+"""
+
+import os, sys, subprocess
+import errno, shutil
+
 from setuptools import setup, find_packages
 from optparse import OptionParser
 
@@ -69,14 +71,6 @@ if __name__=='__main__':
     os.chdir(BASEDIR)
     parser = OptionParser()
 
-    #kargs  = dict( dest="boot", action="store_true",
-    #               default=False, help="Bootstrap Cortex" )
-    #parser.add_option('--boot', '-b', **kargs)
-
-    #kargs=dict( dest="name", default="node",
-    #            help="Name of environment to build [default: node]")
-    #parser.add_option('--name', '-n', **kargs)
-
     kargs = dict(dest='down_cache', default="/tmp/.cortex.pip_cache.down",
                help="Location of the download cache [default: /tmp/.cortex.pip_cache.down]")
     parser.add_option('--download', '-d', **kargs)
@@ -101,7 +95,7 @@ if __name__=='__main__':
         packages    = find_packages('lib'),
         entry_points = {
             'console_scripts': [
-                'kinbaku = kinbaku.bin.kinabku:entry',
+                'kinbaku = kinbaku.bin.kbk:entry',
             ],
         },
     )

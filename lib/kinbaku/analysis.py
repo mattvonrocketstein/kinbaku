@@ -1,5 +1,7 @@
 """ kinbaku.analysis
 """
+import os
+
 def pyflakes(fpath):
     """  given a file, returns a list of messages like:
 
