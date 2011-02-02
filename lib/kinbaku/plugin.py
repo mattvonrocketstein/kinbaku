@@ -63,7 +63,7 @@ class KinbakuPlugin(object):
             parent = self.__class__.__name__.lower()
 
             print space,os.path.split(sys.argv[0])[1],parent, name,'\n', space*2, doc
-
+            print
 
     @classmethod
     def spawn(kls, **kargs): return kls(**kargs)

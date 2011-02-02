@@ -55,7 +55,21 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
 
     @publish_to_commandline
     def stats(self):
-        """ interface: stats """
+        """ Show various statistics for the codebase given codebase.
+            Currently, supported metrics include:
+              + file count (all)
+              + file count (python)
+              + line count
+              + word summary (only words that are statistically unlikely)
+              + valid booleans for each file
+
+            Coming soon:
+              + comment/code ratio
+              + average lines per file
+              * average imports per file
+              * total number of classes, functions
+
+        """
         from kinbaku.analysis import *
         ws = self.word_summary()
         ws.update(combine_word_summary(ws))
@@ -105,14 +119,30 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
 
     @publish_to_commandline
     def search(self, name):
-        """ interface: search codebase using <name> """
+        """ ex: kinbaku codebase search "zam" """
         result = self._search(name)
 
-        out=[]
+        #out=[]
+        out={}
         for match1 in result.get('change_map',[]):
             for match2 in match1['matches']:
-                out.append(Match(search=name,**match2))
-        return out
+               #out.append(Match(search=name,**match2))
+               #print "{path}\n{lineno}:{line}".format(path=match2['real_path'],
+               #                                       lineno=match2['lineno'],
+               #                                       line=match2['line'])
+               entry = "{lineno}:{line}".format(\
+                   lineno=match2['lineno'],
+                   line=match2['line'])
+
+               if match2['real_path'] in out: out[match2['real_path']] += [entry]
+               else:                          out[match2['real_path']] = [entry]
+
+        for k in out:
+            print
+            print k
+            for x in out[k]: print x
+            print
+        return
 
 
     def _search(self, name):
