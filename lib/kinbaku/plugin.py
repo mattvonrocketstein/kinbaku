@@ -54,15 +54,23 @@ class KinbakuPlugin(object):
     @publish_to_commandline
     def help(self):
         """ """
+        from pep362 import signature
         cls_names = [ x for x in dir(self.__class__) if \
                       is_published_to_commandline(getattr(self, x)) and\
                       x!='help' ]
         for name in cls_names:
-            space  = ' '
-            doc    = getattr(self,name).__doc__
-            parent = self.__class__.__name__.lower()
-
-            print space,os.path.split(sys.argv[0])[1],parent, name,'\n', space*2, doc
+            space    = ' '
+            func     = getattr(self,name)
+            doc      = func.__doc__
+            parent   = self.__class__.__name__.lower()
+            progname = os.path.split(sys.argv[0])[1]
+             # probably an instancemethod..
+            func_sig = ['@'+k for k in signature(func)._parameters.keys() if k!='self']
+            _ex      = "{kinbaku} {plugin} {name} {sig}".format(kinbaku = progname,
+                                                                plugin  = parent,
+                                                                name    = name,
+                                                                sig     = func_sig)
+            print space,_ex,'\n', space*2, doc
             print
 
     @classmethod
