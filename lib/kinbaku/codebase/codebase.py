@@ -1,26 +1,16 @@
 """ kinbaku.codebase.codebase
 """
 
-import os, sys
-import shutil
-from tempfile import gettempdir
-from contextlib import contextmanager
-
+import os
 import pylint
 
-import rope
 from path import path
-from rope.base.exceptions import RopeError
 from rope.base.project import Project
 from rope.refactor import restructure
-from rope.contrib import generate
 
 from kinbaku import analysis
-from kinbaku.report import console
-from kinbaku.types import Match
 
-from kinbaku.util import divider, remove_recursively
-from kinbaku.util import report, is_python, groupby, _import
+from kinbaku.util import report, is_python, groupby
 from kinbaku.codebase.bases import CBPlugin, Sandbox, CBContext
 
 USAGE = "codebase subparser usage "
@@ -30,7 +20,7 @@ def map_over_files(func):
     def likefilelines(self, *args,**kargs):
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
-from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
+from kinbaku.plugin import publish_to_commandline
 class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
 
@@ -70,7 +60,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
               * total number of classes, functions
 
         """
-        from kinbaku.analysis import *
+        from kinbaku.analysis import combine_word_summary
         ws = self.word_summary()
         ws.update(combine_word_summary(ws))
         words_in_all_files = [ ws[fpath].keys() for fpath in ws ]
