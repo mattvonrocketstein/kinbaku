@@ -22,7 +22,9 @@ def map_over_files(func):
     def likefilelines(self, *args,**kargs):
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
+
 from kinbaku.plugin import publish_to_commandline
+
 class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
 
@@ -73,7 +75,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                      valid=[pylint(fpath) for fpath in self.files(python=True)],
                     )
 
-    def __init__(self, root, workspace=None, gloves_off=False, **rope_project_options):
+    def __init__(self, root, fpath=None, workspace=None, gloves_off=False, **rope_project_options):
         """ """
         def create_shadow(self):
             """ returns path to a shadow of root """
@@ -89,15 +91,23 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                     err = "If the gloves aren't off, the shadow ({sh})should be uninhabited.."
                     raise Exception, err.format(sh=path)
             return path
-        if not os.path.exists(root):
-            raise UnusableCodeError, "nonexistent path {p}".format(p=root)
-        self.pth_root   = root
+        if root is None:
+            assert fpath and fpath.exists()
+            self.pth_one  = fpath
+            self.pth_root = None
+        else:
+            if not os.path.exists(root):
+                raise UnusableCodeError, "nonexistent path {p}".format(p=root)
+            else:
+                self.pth_root   = root
+                self.pth_one    = None
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
 
     @publish_to_commandline
     def files(self, python=False):
         """ returns a list path() objects """
+        if not self.pth_root: return [self.pth_one]
         all_files = path(self.pth_root).files()
         if python:
             out = filter(is_python, all_files)

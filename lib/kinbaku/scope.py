@@ -15,27 +15,23 @@ from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 class PythoscopeVox:
     """ a place for pythoscope to talk out into """
     @staticmethod
-    def pythoscope_vox(*args, **kargs):
-        report('   ',*args, **kargs)
-    write = pythoscope_vox
+    def pythoscope(*args, **kargs):
+        msg = '  '+args[0].strip()
+        report(msg, **kargs)
+    write = pythoscope
 from pythoscope import logger
 from pythoscope import init_project
 logger.set_output(PythoscopeVox)
 
 class Pythoscope(KinbakuPlugin):
     """ """
-    @classmethod
-    def spawn(kls, **kargs):
-        return Pythoscope()
-
     @publish_to_commandline
     def generate(self, input_dir):
         """ generates empty unittests from project-root at @input_dir
         """
         from kinbaku.codebase import plugin as CodeBase
-        with CodeBase(input_dir, gloves_off=True, workspace=None) as codebase:
-            # mirror fpath into codebase and get it's name
-            #codebase.mirror()
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        def doit(codebase):
             fpath = codebase.python_files[0]
             fpath = codebase%fpath
             fpath = path(fpath)
@@ -43,6 +39,20 @@ class Pythoscope(KinbakuPlugin):
             self.init_pyscope(fpath)
             self.make_tests(codebase)
 
+        if path(input_dir).isdir():
+            with CodeBase(input_dir, gloves_off=True, workspace=None) as codebase:
+                # mirror fpath into codebase and get it's name
+                #codebase.mirror()
+                doit(codebase)
+        else:
+            fpath = path(input_dir)
+            with CodeBase(None,fpath=fpath,
+                          workspace='kbk.'+fpath.name,
+                          gloves_off=True) as codebase:
+                doit(codebase)
+                pth_tests = path(codebase.pth_shadow)+path('/tests/test_')+fpath.name
+                assert pth_tests.exists(),"wait, wut?"
+                print open(pth_tests).read()
         sys.exit()
 
     def make_tests(self, codebase):
@@ -59,7 +69,7 @@ class Pythoscope(KinbakuPlugin):
             remove_recursively(pythoscope_workspace)
         init_project(fpath)
 
-    def __init__(self, fpath=None):
+    def __init__(self, **kargs):
         pass #self.fpath=fpath or self.default_fpath
 plugin = Pythoscope
 
