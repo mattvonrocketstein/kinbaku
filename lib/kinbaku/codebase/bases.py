@@ -10,7 +10,6 @@ from rope.base.exceptions import RopeError
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 class CBPlugin(KinbakuPlugin):
     """
-
     @classmethod
     def hook(kls, args, options, name=None, path=None, **kargs):
         with kls(path, gloves_off=True) as codebase:
@@ -54,13 +53,17 @@ class CBContext(object):
 
 class Sandbox(object):
     """ CodeBase-Aspect Sandbox aspect of CodeBase """
+
     def __mod__(self,fpath):
+        return (self>>fpath).real_path
+
+    def __lshift__(self,fpath):
         """ inverse of __getitem__, demirrors a fpath back into
             the original codebase.
         """
         raise NotImplemented
 
-    def __getitem__(self,fpath):
+    def __rshift__(self,fpath):
         """ mirrors a fpath into sandbox:
               if this is called multiple times, it will get a fresh
               copy of the originating file each time..
@@ -75,7 +78,7 @@ class Sandbox(object):
                 name_would_be = os.path.join(self.pth_shadow, fpath.name)
                 if os.path.exists(name_would_be):
                     remove_recursively(name_would_be)
-                    return self[fpath]
+                    return self>>fpath
                 else:
                     raise Exception,['wait, what?', str(e), name_would_be]
             else:
