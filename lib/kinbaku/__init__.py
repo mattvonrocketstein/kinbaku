@@ -32,4 +32,13 @@ myfile = self.project.root.create_file('myfile.txt')
 self.assertEquals(myfile, path_to_resource(self.project, myfile.real_path))
 """
 
+def sig_example():
+    from pep362 import signature
+    def f(a,b,c): pass
+    sig = signature(f)
+    parameters = sig._parameters #{'a':parameter1,'b':parameter2, .. }
+    print sig, parameters
+    from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
+if __name__=='__main__':
+    sig_example()
