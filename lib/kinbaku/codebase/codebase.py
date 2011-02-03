@@ -12,6 +12,8 @@ from kinbaku import analysis
 
 from kinbaku.util import report, is_python, groupby
 from kinbaku.codebase.bases import CBPlugin, Sandbox, CBContext
+from kinbaku.types import UnusableCodeError
+DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
 
 USAGE = "codebase subparser usage "
 
@@ -71,11 +73,11 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                      valid=[pylint(fpath) for fpath in self.files(python=True)],
                     )
 
-    def __init__(self, root, gloves_off=False, **rope_project_options):
+    def __init__(self, root, workspace=None, gloves_off=False, **rope_project_options):
         """ """
         def create_shadow(self):
             """ returns path to a shadow of root """
-            name         = "xyz" # TODO: compute name
+            name         = workspace or DEFAULT_WORKSPACE_NAME
             shade_holder = CodeBase.shadow_container()
             path         = os.path.join(shade_holder, name)
 
@@ -88,7 +90,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                     raise Exception, err.format(sh=path)
             return path
         if not os.path.exists(root):
-            raise Exception, "nonexistent path {p}".format(p=root)
+            raise UnusableCodeError, "nonexistent path {p}".format(p=root)
         self.pth_root   = root
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
@@ -102,6 +104,9 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         else:
             out = all_files
         return out
+
+    @property
+    def python_files(self): return self.files(python=True)
 
     def __iter__(self):
         """ azucar syntactico: iterator over all files """
