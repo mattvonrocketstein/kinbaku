@@ -9,15 +9,19 @@
 
 """
 import copy, sys
+
+from pep362 import signature
 from path import path
-import kinbaku
-from kinbaku.util import divider, remove_recursively, report, is_python, groupby, _import
 
+from kinbaku.util import _import
+from kinbaku.util import report, is_python, groupby
+from kinbaku.util import divider, remove_recursively
+def fpath2namespace(fpath):
+    namespace  = fpath.namebase
+    if namespace == '__init__':
+        namespace = fpath.dirname().namebase
+    return namespace
 
-#USAGE="""
-#kinbaku is a tool for static analysis of python source files.
-#  use kinbaku
-#"""
 def parser():
     """ builds the parser object """
     from optparse import OptionParser
@@ -38,12 +42,16 @@ def plugin_search_results():
     plugins         = []
     fileself        = path(__file__).abspath()
     container       = fileself.dirname().dirname().abspath()
-    container_files = [ x for x in container.files() if x.abspath()!=fileself ]
-    container_files = [ x for x in container_files if x.ext == '.py']
-    for fpath in container_files:
+    container_all   = [ x.abspath() for x in container.files() if x.abspath()!=fileself and x.namebase!='__init__']
+    container_files = [ x for x in container_all if x.ext == '.py']
+    module_dir      = lambda x: any([y.name=='__init__.py' for y in x.files()])
+    module_roots    = [ x + path('/__init__.py') for x in container.dirs() if module_dir(x) ]
+
+    file_options    = container_files + module_roots
+    for fpath in file_options:
         reality    = globals()
         shadow     = copy.copy(globals())
-        namespace  = fpath.namebase
+        namespace  = fpath2namespace(fpath)
         shadow.update(dict(__name__=namespace))
         execfile(fpath, shadow)
         difference = list(set(shadow.keys())-set(reality.keys()))
@@ -61,8 +69,12 @@ def show_all_plugins():
     for match in matches:
         fpath, plugin = match
         #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-        print ' ', fpath.namebase.upper()
-        plugin().help(indent=3)
+        print ' ', fpath2namespace(fpath).upper()
+        #try:
+        plugin_obj = plugin.spawn()
+        #except TypeError, t:
+        #    raise TypeError, str(t)+'\nExpectedSignature: '+str(signature(plugin_obj.__init__)._parameters)
+        plugin_obj.help(indent=3)
 
 
 def handle_main_argument(args, options):
@@ -87,7 +99,11 @@ def handle_main_argument(args, options):
         if not plugin:
             report('Code not retrieve "plugin" from {mod}',mod=plugin_mod)
             sys.exit()
-        plugin().parse_args(args[1:], options)
+        #try:
+        plugin_obj = plugin.spawn()
+        #except TypeError:
+        #    raise Exception, signature(plugin_obj.__init__)._parameters
+        plugin_obj.parse_args(args[1:], options)
 
 def entry():
     """ """

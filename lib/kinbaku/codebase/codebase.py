@@ -23,6 +23,7 @@ def map_over_files(func):
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
 from kinbaku.plugin import publish_to_commandline
+
 class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
 
@@ -42,8 +43,14 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         #root = mktemp(dir=kls.shadow_container(), prefix='codebase_')
         #print kargs
         #sys.exit()
-        assert path
-        return kls(path,gloves_off=True)
+        if not path:
+            from kinbaku.config import Config
+            config = Config.spawn()
+            path = config.get('path',None)
+        #assert path and os.path.exists(path)
+        obj = kls(path, gloves_off=True)
+        #print 'returning obj',obj
+        return obj
 
     @publish_to_commandline
     def stats(self):
@@ -89,8 +96,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                     err = "If the gloves aren't off, the shadow ({sh})should be uninhabited.."
                     raise Exception, err.format(sh=path)
             return path
-        if not os.path.exists(root):
-            raise UnusableCodeError, "nonexistent path {p}".format(p=root)
+
         self.pth_root   = root
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
@@ -98,6 +104,9 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
     @publish_to_commandline
     def files(self, python=False):
         """ returns a list path() objects """
+        if not self.pth_root or not os.path.exists(self.pth_root):
+            return []
+            #raise UnusableCodeError, "nonexistent path {p}".format(p=self.pth_root)
         all_files = path(self.pth_root).files()
         if python:
             out = filter(is_python, all_files)
@@ -161,7 +170,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         pattern, goal, rules = name, '', {}
 
         ## Mirror code-files-only into the sandbox
-        [ self[fpath] for fpath in self.files(python=True) ]
+        [ self>>fpath for fpath in self.files(python=True) ]
 
         ## Setup and grab data from rope-restructuring
         strukt  = restructure.Restructure(self.project, pattern, goal, rules)
