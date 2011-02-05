@@ -1,37 +1,58 @@
-import sys
-import os
+""" kinbaku.plugin
+"""
+
+import copy
+import sys, os
+
+from path import path
+from pep362 import signature
+
 from kinbaku.report import report
 
 def publish_to_commandline(func):
-    """ """
+    """ decorator for plugin methods """
     func.is_published_to_commandline = True
     return func
-
 def is_published_to_commandline(func):
+    """ detects functions that have been marked for publishcation """
     return hasattr(func,'is_published_to_commandline')
 
-class KinbakuPlugin(object):
+class Plugin(object):
     """ """
-
     @classmethod
     def parse_args(kls, args, options):
         """ receives cascaded args/options """
-        from kinbaku.config import Config
 
-        if not args:
-            report("Expected args")
-        try:
-            name, args = args[0], args[1:] # SNIP
-        except IndexError:
-            report("Expected ie codebase search")
+        def panic():
+            print
+            print kls.__module__.split('.')[-1].upper()
+            kls().help()
             sys.exit()
 
+        # NOTE: do not move import..
+        from kinbaku.config import Config
+
+        try: interface_name = args[0]
+        except IndexError: ## Not even a function name
+            panic()
+        else: ## Got plugin name..
+            try: args = args[1:]
+            except IndexError: ## .. But not command.
+                show_plugin_commands(interface_name)
+                sys.exit()
+
+
+            else: ## Got name and command!
+                pass
+
+        # Get "path" either from command line or
+        #  by way of the Config-plugin.
         path = options.path
         path = path or Config().get('path', os.getcwd())
 
-        if not (name and path):
+        if not (interface_name and path):
+            print 'wonk'
             from kinbaku.bin.kbk import USAGE
-            #print "bad name/path combo", name, path
             print USAGE
             sys.exit()
 
@@ -47,31 +68,61 @@ class KinbakuPlugin(object):
             print('\nERROR: spawning {kls} with {options}'.format(
                 kls=kls.__name__, options=options))
             sys.exit()
-        func = getattr(instance, name)
+
+        func   = getattr(instance, interface_name,None)
+        if func is None:
+            panic()
+        parent = kls.__name__.lower()
+        if not is_published_to_commandline(func):
+            err  = '\nERROR:  Interface "{I}" is not published on plugin "{P}".'
+            err += '\n        For help using this plugin, try: "{progname} {P} help"'
+            err  = err.format(I=interface_name, P=parent,progname=sys.argv[0],
+                              )
+            print err
+            sys.exit()
+
         #report("running {f} with {a}, {k}", f=func.__name__, a=args, k=options)
         kls.display_results(func(*args))
 
     @publish_to_commandline
     def help(self):
-        """ """
-        from pep362 import signature
+        """ shows help for this plugin """
         cls_names = [ x for x in dir(self.__class__) if \
                       is_published_to_commandline(getattr(self, x)) and\
                       x!='help' ]
         for name in cls_names:
-            space    = ' '
-            func     = getattr(self,name)
-            doc      = func.__doc__
-            parent   = self.__class__.__name__.lower()
-            progname = os.path.split(sys.argv[0])[1]
-             # probably an instancemethod..
-            func_sig = ['@'+k for k in signature(func)._parameters.keys() if k!='self']
-            _ex      = "{kinbaku} {plugin} {name} {sig}".format(kinbaku = progname,
-                                                                plugin  = parent,
-                                                                name    = name,
-                                                                sig     = func_sig)
-            print space,_ex,'\n', space*2, doc
-            print
+            func       = getattr(self,name)
+            doc        = func.__doc__
+            parent     = self.__class__.__name__.lower()
+            modname    = self.__class__.__module__.lower().split('.')[-1]
+            progname   = os.path.split(sys.argv[0])[1]
+            sig        = signature(func)
+            parameters = sig._parameters
+
+            display1     = lambda k:   '<{k}>'.format(k=k)
+            dvdisplay    = lambda p:   '[<{k}={deflt}>' % \
+                                        {'k':p.name, 'deflt':p.default_value}
+            position     = lambda k:   parameters[k].position
+            sort_machine = lambda x, y: cmp(x[0],y[0])
+
+            func_sig   = [ [position(k), k, parameters[k] ] for k in parameters.keys() ]
+            func_sig.sort(sort_machine) # sort args by their position in signature
+
+            display    = lambda t: (hasattr(t[2],'default_value') and \
+                                    dvdisplay(t[2])) or \
+                                   (True and \
+                                    display1(t[1]))
+
+            func_sig   = [ display(x) for x in func_sig ]
+            func_sig   = func_sig[1:] # probably an instancemethod.. chop off "self"
+            func_sig   = ' '.join(func_sig)
+            _ex        = "{kinbaku} {plugin} {name} {sig}".format(kinbaku = progname,
+                                                                  plugin  = modname,
+                                                                  name    = name,
+                                                                  sig     = func_sig)
+            print ' {example}{space1}{doc}'.format(example=_ex,
+                                                    space1=' '*(45-len(_ex)),
+                                                    doc=doc or "")
 
     @classmethod
     def spawn(kls, **kargs): return kls(**kargs)
@@ -93,3 +144,8 @@ class KinbakuPlugin(object):
        else:
            pass
            #report("Not sure how to deal with answer:", result)
+KinbakuPlugin = Plugin
+
+
+
+#show_all_plugins()
