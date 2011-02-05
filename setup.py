@@ -71,6 +71,13 @@ if __name__=='__main__':
     os.chdir(BASEDIR)
     parser = OptionParser()
 
+    kargs = dict() #dest='quiet', default=False, help="quiet")
+    parser.add_option('--dist-dir', **kargs)
+
+    kargs = dict(dest='quiet', default=False, help="quiet")
+    parser.add_option('--quiet', '-q', **kargs)
+
+
     kargs = dict(dest='down_cache', default="/tmp/.cortex.pip_cache.down",
                help="Location of the download cache [default: /tmp/.cortex.pip_cache.down]")
     parser.add_option('--download', '-d', **kargs)
