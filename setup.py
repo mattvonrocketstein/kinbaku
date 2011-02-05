@@ -73,9 +73,11 @@ if __name__=='__main__':
 
     kargs = dict() #dest='quiet', default=False, help="quiet")
     parser.add_option('--dist-dir', **kargs)
+    parser.add_option('--egg-base', {})
+    parser.add_option('-c','--single-version-externally-managed', {})
+    parser.add_option('--install-headers', {})
 
-    kargs = dict(dest='quiet', default=False, help="quiet")
-    parser.add_option('--quiet', '-q', **kargs)
+    parser.add_option('--quiet', '-q', **dict(dest='quiet', default=False, help="quiet"))
 
 
     kargs = dict(dest='down_cache', default="/tmp/.cortex.pip_cache.down",
@@ -84,7 +86,7 @@ if __name__=='__main__':
 
     kargs = dict(dest='build_cache', default="/tmp/.cortex.pip_cache.build",
                  help="Location of the build dir [default: /tmp/.cortex.pip_cache.build]")
-    parser.add_option('--build', '-c', **kargs)
+    parser.add_option('--build', **kargs)
 
     kargs = dict(dest="develop", action='store_false', default=True,
                  help="Install cortex as a library instead of for development (symlink here)")
