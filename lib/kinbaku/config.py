@@ -21,7 +21,7 @@ class Config(ConfigPlugin):
 
     @publish_to_commandline
     def set(self, *args):
-        """ """
+        """ set a value in kinbaku's persistent configuration """
         if not args: return
 
         if isinstance(args[0], dict):
@@ -50,15 +50,17 @@ class Config(ConfigPlugin):
         fhandle.close()
 
     @publish_to_commandline
-    def show(self):
-        """ display current configuration
-        """
-        print "  kinbaku settings:"
-        extras = {'config-file':self.fpath}
-        for k in self.dct:
-            print "\t{key}\t{val}".format(key=k, val=self.dct[k])
-        for k in extras:
-            print "\t{key}\t{val}".format(key=k, val=extras[k])
+    def show(self, setting_name=None):
+        """ display current configuration """
+        if not setting_name:
+            print "  kinbaku settings:"
+            extras = {'config-file':self.fpath}
+            for k in self.dct:
+                print "\t{key}\t{val}".format(key=k, val=self.dct[k])
+            for k in extras:
+                print "\t{key}\t{val}".format(key=k, val=extras[k])
+        else:
+            print "\t{key}\t{val}".format(key=setting_name, val=self.dct[setting_name])
 
 
     def __getitem__(self, x):
@@ -77,12 +79,13 @@ class Config(ConfigPlugin):
 
     @publish_to_commandline
     def keys(self):
-        """ """
+        """ show all keys in config dictionary """
         self.dct.keys()
 
-    @publish_to_commandline
     def get(self, arg=None, default=None):
         """ dict compatibility """
+        return self.dct.get(arg, default)
+
         v = self.read()
         if not v:
             return default
