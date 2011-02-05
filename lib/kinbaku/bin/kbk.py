@@ -14,18 +14,12 @@ import kinbaku
 from kinbaku.util import divider, remove_recursively, report, is_python, groupby, _import
 
 
-USAGE="""
-kinbaku is a tool for static analysis of python source files.
-
-    $ kinbaku code --path=$HOME/code --search foobar
-    $ kinbaku code --path=$HOME/code --search foobar --rules inst:xyz
-
-    $ kinbaku detect --path=$HOME/code --tests
-
-    $ kinbaku validate --path=$HOME/code
-
-"""
+#USAGE="""
+#kinbaku is a tool for static analysis of python source files.
+#  use kinbaku
+#"""
 def parser():
+    """ builds the parser object """
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-f", "--file", dest="filename", help="use FILE", metavar="FILE")
@@ -33,34 +27,42 @@ def parser():
     parser.add_option("-s", "--search", dest="search", default=True, help="..")
     parser.add_option("-p", "--path", dest="path",  default='', help="..")
     return parser
+
+def announce_discovery(fpath,plugin_obj):
+    """ placeholder """
+    # print "\tfound plugin",fpath,plugin_obj, plugin_obj.__class__.__bases__
+    pass
+
 def plugin_search_results():
-    """ """
+    """ NOTE: currently the search-path only includes kinbaku's root module """
     plugins         = []
     fileself        = path(__file__).abspath()
     container       = fileself.dirname().dirname().abspath()
-    container_files = [ x for x in container.files() if x.abspath()!=fileself]
+    container_files = [ x for x in container.files() if x.abspath()!=fileself ]
     container_files = [ x for x in container_files if x.ext == '.py']
     for fpath in container_files:
         reality    = globals()
         shadow     = copy.copy(globals())
-        shadow.update(dict(__name__='__shadow__'))
+        namespace  = fpath.namebase
+        shadow.update(dict(__name__=namespace))
         execfile(fpath, shadow)
         difference = list(set(shadow.keys())-set(reality.keys()))
         if "plugin" in difference:
             plugin_obj = shadow['plugin']
             plugins.append([fpath, plugin_obj])
-            #print "\tfound plugin",fpath,plugin_obj, plugin_obj.__class__.__bases__
+            announce_discovery(fpath, plugin_obj)
     return plugins
 
 def show_all_plugins():
     """ displays all plugins and their
         options in an easy to read menu """
     matches = plugin_search_results()
+    print "\n Help for sub-commands:\n"
     for match in matches:
-        print
         fpath, plugin = match
-        print ':',plugin.__name__.upper()
-        plugin().help()
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        print ' ', fpath.namebase.upper()
+        plugin().help(indent=3)
 
 
 def handle_main_argument(args, options):
@@ -68,8 +70,11 @@ def handle_main_argument(args, options):
 
     try: main = args[0]
     except IndexError:
-        show_all_plugins()
-        sys.exit()
+        show_all_plugins(); sys.exit()
+    else:
+        if main=='help':
+            show_all_plugins(); sys.exit()
+
     try:
         import_line = 'kinbaku.{plugin}'.format(plugin=main)
         plugin_mod  = _import(import_line)
@@ -86,8 +91,11 @@ def handle_main_argument(args, options):
 
 def entry():
     """ """
-    (options, args) = parser().parse_args()
-    handle_main_argument(args,options)
+    if "--help" in sys.argv:
+        show_all_plugins(); sys.exit()
+    else:
+        (options, args) = parser().parse_args()
+        handle_main_argument(args,options)
 
 if __name__=='__main__':
     entry()
