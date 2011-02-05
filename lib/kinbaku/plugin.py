@@ -25,7 +25,7 @@ class Plugin(object):
 
         def panic():
             print
-            print kls.__module__.split('.')[-1].upper()
+            #print kls.__module__.split('.')[-1].upper()
             kls().help()
             sys.exit()
 
@@ -85,23 +85,31 @@ class Plugin(object):
         kls.display_results(func(*args))
 
     @publish_to_commandline
-    def help(self):
+    def help(self, indent=0):
         """ shows help for this plugin """
         cls_names = [ x for x in dir(self.__class__) if \
                       is_published_to_commandline(getattr(self, x)) and\
                       x!='help' ]
+        modname    = self.__class__.__module__.lower().split('.')[-1]
+
+        if not indent:
+            print "->",modname.upper()
+            indent=3
+
         for name in cls_names:
             func       = getattr(self,name)
             doc        = func.__doc__
             parent     = self.__class__.__name__.lower()
-            modname    = self.__class__.__module__.lower().split('.')[-1]
+
             progname   = os.path.split(sys.argv[0])[1]
             sig        = signature(func)
             parameters = sig._parameters
 
             display1     = lambda k:   '<{k}>'.format(k=k)
-            dvdisplay    = lambda p:   '[<{k}={deflt}>' % \
-                                        {'k':p.name, 'deflt':p.default_value}
+            dvdisplay    = lambda p:   (p.default_value is not None and \
+                                        '[<{k}={deflt}>'.format(**{'k':p.name,
+                                                                  'deflt':p.default_value})) or \
+                                       ('[<{k}>]'.format(**{'k':p.name}))
             position     = lambda k:   parameters[k].position
             sort_machine = lambda x, y: cmp(x[0],y[0])
 
@@ -120,7 +128,7 @@ class Plugin(object):
                                                                   plugin  = modname,
                                                                   name    = name,
                                                                   sig     = func_sig)
-            print ' {example}{space1}{doc}'.format(example=_ex,
+            print ' '*indent + ' {example}{space1}{doc}'.format(example=_ex,
                                                     space1=' '*(45-len(_ex)),
                                                     doc=doc or "")
 

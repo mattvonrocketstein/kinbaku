@@ -114,6 +114,7 @@ class Config(ConfigPlugin):
 
     @publish_to_commandline
     def wipe(self):
+        """ destroys all of the persistent settings """
         report("Wiping kinbaku configuration in {fp}",fp=self.fpath)
         self.set({})
 
