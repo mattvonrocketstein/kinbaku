@@ -24,39 +24,50 @@ logger.set_output(PythoscopeVox)
 
 class Pythoscope(KinbakuPlugin):
     """ """
+    codebase=None
+
     @classmethod
     def spawn(kls, **kargs):
         return Pythoscope()
 
+    tests_folder = property(lambda self: self.codebase and path(self.codebase.pth_shadow)+path('/tests'))
+    tests_files  = property(lambda self: self.tests_folder and self.tests_folder.files())
+
     @publish_to_commandline
-    def generate(self, input_dir):
-        """ generates empty unittests from project-root at @input_dir
+    def generate(self, input_file_or_dir):
+        """ Generates empty unittests from project at @input_file_or_dir.
+            If input is a single file, the result will be sent to stdout.
         """
         from kinbaku.codebase import plugin as CodeBase
-        with CodeBase(input_dir, gloves_off=True, workspace=None) as codebase:
-            # mirror fpath into codebase and get it's name
-            #codebase.mirror()
+        with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
+            self.codebase = codebase
             fpath = codebase.python_files[0]
             fpath = codebase%fpath
             fpath = path(fpath)
             fpath = fpath.parent
             self.init_pyscope(fpath)
-            self.make_tests(codebase)
-
+            self.make_tests()
+            if len(codebase.files())==1:
+                only_file = self.tests_files[0]
+                print open(only_file).read()
         sys.exit()
 
-    def make_tests(self, codebase):
-        files = codebase.python_files
-        files = [codebase%fpath for fpath in files]
+
+    def make_tests(selfe):
+        files = self.codebase.python_files
+        files = [self.codebase%fpath for fpath in files]
         from pythoscope import generate_tests
         generate_tests(files, force=False, template='unittest')
 
     def init_pyscope(self, fpath):
-        """ initialize pyscope with codebase"""
-        pythoscope_workspace = (fpath + path('/.pythoscope'))
-        if pythoscope_workspace.exists():
+        """ initialize pythoscope with codebase
+             ( will be <codebase-shadow>/.pythonscope )
+        """
+        self.workspace = (fpath + path('/.pythoscope'))
+
+        if self.workspace.exists():
             from kinbaku.util import remove_recursively
-            remove_recursively(pythoscope_workspace)
+            remove_recursively(self.workspace)
         init_project(fpath)
 
     def __init__(self, fpath=None):
