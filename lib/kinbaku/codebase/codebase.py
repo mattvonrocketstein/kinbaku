@@ -125,7 +125,11 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         if not self.pth_root or not os.path.exists(self.pth_root):
             return []
             #raise UnusableCodeError, "nonexistent path {p}".format(p=self.pth_root)
-        all_files = path(self.pth_root).files()
+        pth_root = path(self.pth_root)
+        if not pth_root.isdir():
+            all_files = [pth_root]
+        else:
+            all_files = pth_root.files()
         if python:
             out = filter(is_python, all_files)
         else:
