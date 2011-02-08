@@ -2,14 +2,10 @@
 """ setup.py for kinbaku
 """
 
-import os, sys, subprocess
-import errno, shutil
-
+import os
 from setuptools import setup, find_packages
-from optparse import OptionParser
 
 BASEDIR = os.path.dirname(os.path.realpath(__file__))
-
 
 setup(
     name         ='kinbaku',
