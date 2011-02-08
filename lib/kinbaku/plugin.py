@@ -128,9 +128,19 @@ class Plugin(object):
                                                                   plugin  = modname,
                                                                   name    = name,
                                                                   sig     = func_sig)
-            print ' '*indent + ' {example}{space1}{doc}'.format(example=_ex,
-                                                    space1=' '*(45-len(_ex)),
-                                                    doc=doc or "")
+            dox = [x.strip() for x in doc.split('\n') if x.strip()]
+            if len(dox)>1:
+                print
+
+            for line in dox:
+                ex = _ex
+                if dox.index(line)!=0:
+                    ex=' '*len(_ex)
+                if line.startswith('+'): line = '  ' + line[1:]
+                print ' '*indent + ' {example}{space1}{doc}'.format(example=ex,
+                                                    space1=' '*(45-len(ex)),
+                                                    doc=line or "")
+
 
     @classmethod
     def spawn(kls, **kargs): return kls(**kargs)

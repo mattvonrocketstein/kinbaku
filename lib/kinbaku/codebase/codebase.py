@@ -23,6 +23,7 @@ USAGE = "codebase subparser usage "
 def map_over_files(func):
     """ """
     def likefilelines(self, *args,**kargs):
+        """ """
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
 
@@ -57,7 +58,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
 
     @publish_to_commandline
     def names(self):
-        """ show all names in codebase (AST walker) """
+        """ shows all names in codebase, sorted by file (AST walker) """
         test        = lambda node: node.__class__.__name__=='Name'
         walkage     = lambda fpath: ast.walk(ast.parse(open(fpath).read()))
         fpath2names = lambda fpath: [ node.id for node in walkage(fpath) if test(node) ]

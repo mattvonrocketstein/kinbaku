@@ -1,8 +1,9 @@
 """ kinbaku.tools:
       mostly copied from ropetest.testutils
 """
+# This is a comment!
+zam = 'bang! blammo!'
 
-zam='bang'
 
 import os.path
 import shutil
