@@ -4,6 +4,7 @@
 import os
 import pylint
 import compiler
+import parser
 
 from path import path
 from rope.base.project import Project
@@ -55,21 +56,24 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         return obj
 
     @publish_to_commandline
+    def names(self):
+        """ show all names in codebase (AST walker) """
+        test        = lambda node: node.__class__.__name__=='Name'
+        walkage     = lambda fpath: ast.walk(ast.parse(open(fpath).read()))
+        fpath2names = lambda fpath: [ node.id for node in walkage(fpath) if test(node) ]
+        return dict([ [fpath, fpath2names(fpath)] for fpath in self.python_files ])
+
+    @publish_to_commandline
     def stats(self):
         """ Show various statistics for the codebase given codebase.
-            Currently, supported metrics include:
-              + file count (all)
-              + file count (python)
-              + line count
-              + word summary (only words that are statistically unlikely)
-              + valid booleans for each file
 
-            Coming soon:
-              + comment/code ratio
-              + average lines per file
-              * average imports per file
-              * total number of classes, functions
+            Currently, supported metrics include: file count (all files,
+            just python files), line count word summary (only words that
+            are statistically unlikely) valid booleans for each file
 
+            Coming soon: comment/code ratio, average lines per file,
+            average imports per file, total number of classes,
+            functions
         """
         from kinbaku.analysis import combine_word_summary
         ws = self.word_summary()
