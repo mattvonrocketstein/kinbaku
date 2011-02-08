@@ -3,6 +3,7 @@
 
 import os
 import pylint
+import compiler
 
 from path import path
 from rope.base.project import Project
@@ -13,8 +14,9 @@ from kinbaku import analysis
 from kinbaku.util import report, is_python, groupby
 from kinbaku.codebase.bases import CBPlugin, Sandbox, CBContext
 from kinbaku.types import UnusableCodeError
-DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
+from kinbaku.plugin import publish_to_commandline
 
+DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
 USAGE = "codebase subparser usage "
 
 def map_over_files(func):
@@ -22,7 +24,7 @@ def map_over_files(func):
     def likefilelines(self, *args,**kargs):
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
-from kinbaku.plugin import publish_to_commandline
+
 
 class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
@@ -101,6 +103,22 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
 
+    def snapshot(self, static=True):
+        """ take snapshot of current codebase """
+        [ self>>fpath for fpath in self.files(python=True) ]
+
+    def has_changed(self, fpath):
+        """
+        """
+        before       = open(fpath,'r').read()
+        after        = open((self^fpath),'r').read()
+        file_changed = not( before == after )
+        ast_changed  = compiler.parse(before,'exec')==compiler.parse(after,'exec')
+
+        out = dict( file_changed=file_changed,
+                    ast_changed=ast_changed )
+        return out
+
     @publish_to_commandline
     def files(self, python=False):
         """ returns a list path() objects """
@@ -170,7 +188,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         pattern, goal, rules = name, '', {}
 
         ## Mirror code-files-only into the sandbox
-        [ self>>fpath for fpath in self.files(python=True) ]
+        self.snapshot()
 
         ## Setup and grab data from rope-restructuring
         strukt  = restructure.Restructure(self.project, pattern, goal, rules)
