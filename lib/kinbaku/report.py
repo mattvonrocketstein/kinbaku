@@ -54,8 +54,10 @@ class console:
                          msg=msg, rest= '-'* afterl)
 
         if display:
-            print out
+            print >> sys.stderr, out
         return out
+    divider=draw_line
+
 console=console()
 
 def whoami():
@@ -63,8 +65,7 @@ def whoami():
     return inspect.stack()[1][3]
 
 def whosdaddy():
-    """ displays information about the caller's caller149
-    """
+    """ displays information about the caller's caller """
     x = inspect.stack()[2]
     frame = x[0]
     fname = x[1]
@@ -75,7 +76,7 @@ def whosdaddy():
     else:
         header = '<??>'
     header = '  ' + header + '.' + func_name
-    print '+', fname, '\n  ', header, '--',
+    print >> sys.stderr, '+', fname, '\n  ', header, '--',
 
 def report(*args, **kargs):
     """ the global reporting mechanism.
@@ -85,9 +86,9 @@ def report(*args, **kargs):
     """
     global console
     whosdaddy()
-    used_kargs=False
-    if len(args)==1:
-        main=args[0]
+    used_kargs = False
+    if len(args) == 1:
+        main = args[0]
         ## If it can be formatted, apply kargs towards that effort
         if hasattr(main,'format'):
             try:
@@ -99,24 +100,24 @@ def report(*args, **kargs):
 
         ## Otherwise, str it and send it to color console
         else:
-            print console.color(str(main))
+            print >> sys.stderr, console.color(str(main))
 
     elif args:
-        print '\n        args=',
+        print >> sys.stderr, '\n        args=',
         if len(args)<3:
-            print console.color(str(args)),
+            print >> sys.stderr, console.color(str(args)),
         else:
             prefix = '\n          '
             for arg in args:
-                print '{prefix}{n} :: {arg}'.format(prefix=prefix, n=args.index(arg),
+                print >> sys.stderr, '{prefix}{n} :: {arg}'.format(prefix=prefix, n=args.index(arg),
                                                              arg=console.color(str(arg)).strip()),
             print
 
     if kargs and not used_kargs:
-        print '\n\tkargs({n})='.format(n=len(kargs))
+        print >> sys.stderr, '\n\tkargs({n})='.format(n=len(kargs))
         #flush = kargs.pop('flush',False)
         for k,v in kargs.items():
-            print "\t  {k} {v}".format(k=console.red(str(k)),v=console.blue(str(v)).strip())
+            print >> sys.stderr, "\t  {k} {v}".format(k=console.red(str(k)),v=console.blue(str(v)).strip())
 
     #if flush:
     #    sys.stdout.flush() # is this even working with ipython?

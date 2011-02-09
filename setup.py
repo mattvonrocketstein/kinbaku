@@ -7,6 +7,7 @@ from setuptools import setup, find_packages
 
 BASEDIR = os.path.dirname(os.path.realpath(__file__))
 
+
 setup(
     name         ='kinbaku',
     version      = '.1',

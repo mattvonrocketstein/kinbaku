@@ -1,6 +1,8 @@
 """ kinbaku.tools:
       mostly copied from ropetest.testutils
+      this is a third line in the module comment string.
 """
+""" this is a second module-level comment.. """
 # This is a comment!
 zam = 'bang! blammo!'
 
@@ -37,8 +39,9 @@ def remove_project(project):
     project.close()
     remove_recursively(project.address)
 
-
+#docutils.nodes.comment
 def remove_recursively(path):
+    """ testing """
     import time
     # windows sometimes raises exceptions instead of removing files
     if os.name == 'nt' or sys.platform == 'cygwin':
