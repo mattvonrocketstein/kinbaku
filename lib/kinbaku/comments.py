@@ -9,6 +9,17 @@ from kinbaku.report import console, report
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.codebase import plugin as CodeBase
 
+class Comment(object):
+    def display(self):
+        dox = console.color(self.text).rstrip()
+        print '{lineno}:\t{dox}'.format(lineno=self.lineno,
+                                          dox=dox, )
+
+    def __init__(self,lineno=-1, text='', full_line=False):
+        self.lineno=int(lineno)
+        self.text=text
+        self.full_line = full_line
+
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
 def extract_comments(content_lines):
     """
@@ -20,28 +31,39 @@ def extract_comments(content_lines):
     for line in contents_raw3:
         if '#' in line:
             line2 = line[line.find('#'):]
-            comments.append([[contents_raw3.index(line),line2]])
+            #comments.append([[contents_raw3.index(line),line2]])
+            comments.append([Comment(lineno=contents_raw3.index(line),
+                                     text=line2,
+                                     full_line=line.strip()==line2.strip())])
     return comments
+
 def extract_docstrings(content_raw,name):
     """
     ## derive document strings:
     ##  [ [line1_comment1,line2_comment1], [line1_comment2],.. ]
     """
-    dox2      = []
-    doctree   = [ x for x in parse_module(content_raw, name) ]
-    doctree   = [ x for x in doctree if x.tagname=='docstring' ]
-    dox       = [ x[0].astext().split('\n') for x in doctree ]
-    out       = [strip_string_markers(line) for line in content_raw.split('\n')]
-
+    lines        = content_raw.split('\n')
+    dox2         = []
+    doctree      = parse_module(content_raw, name)
+    doctree_list = doctree.traverse()#[ x for x in parse_module(content_raw, name) ]
+    doctree_list = [ x for x in doctree_list if x.tagname=='docstring' ]
+    dox          = [ x[0].astext().split('\n') for x in doctree_list ]
+    tmp          = [strip_string_markers(line) for line in lines]
+    tmp_stripped = [x.strip() for x in tmp]
     ## correlate docstrings to line numbers
     ##  [ [[lineX, line1_comment1 ], [lineX+1, line2_comment1, ], [ [lineY, line1_comment2,],.. ]
     for docstring in dox:
         row = []
         for line in docstring:
-            try: lineno = out.index(line + '\n')
-            except ValueError: lineno='?'
+            try:
+                lineno = tmp_stripped.index(strip_string_markers(line).strip())
+            except ValueError:
+                lineno='-1'
+                raise Exception, [strip_string_markers(line), tmp[8:12]]
             if line.strip():
-                row.append([lineno, line])
+                row.append(Comment(lineno=lineno,
+                                   text=line,
+                                   full_line=True))
         dox2.append(row)
     return dox2
 
@@ -58,9 +80,6 @@ class CommentsExtractor(KinbakuPlugin):
 
         def display_file(fpath):
             print console.blue('{fpath}'.format(fpath=fpath))
-        def display_comment(lineno,dox):
-            print '  {lineno}:\t{dox}'.format(lineno=lineno,
-                                              dox=console.color(dox).rstrip())
 
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
             self.codebase = codebase
@@ -71,20 +90,18 @@ class CommentsExtractor(KinbakuPlugin):
                 content_raw   = fhandle().read()
                 content_lines = fhandle().readlines()
 
-                docstrings  = extract_docstrings(content_raw, fpath.name)
+                docstrings    = extract_docstrings(content_raw, fpath.name)
                 comments    = extract_comments(content_lines)
 
                 ## merge lists by line number
                 out = docstrings + comments
-                out.sort(lambda x,y: cmp(x[0][0],y[0][0]))
+                out.sort(lambda x,y: cmp(x[0].lineno,y[0].lineno))
 
                 ## display results
                 display_file(fpath)
                 for doc_group in out:
-                    for doc in doc_group:
-                        lineno,dox = doc
-                        display_comment(lineno,dox)
-                    #if len(doc_group)>1:
-                    #    print '  ',console.divider(display=False)
-
-plugin=CommentsExtractor
+                    for comment in doc_group:
+                        comment.display()
+                    if len(doc_group)>1:
+                        print '  ',console.divider(display=False)
+plugin = CommentsExtractor
