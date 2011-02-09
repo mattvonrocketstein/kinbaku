@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """ kinbaku.bin.kinbaku:  the command line script
 
     $ kinbaku code --path=$HOME/code --search foobar

@@ -53,7 +53,7 @@ class Pythoscope(KinbakuPlugin):
         sys.exit()
 
 
-    def make_tests(selfe):
+    def make_tests(self):
         files = self.codebase.python_files
         files = [self.codebase%fpath for fpath in files]
         from pythoscope import generate_tests

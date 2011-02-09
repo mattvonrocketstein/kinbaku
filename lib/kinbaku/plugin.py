@@ -128,7 +128,8 @@ class Plugin(object):
                                                                   plugin  = modname,
                                                                   name    = name,
                                                                   sig     = func_sig)
-            dox = [x.strip() for x in doc.split('\n') if x.strip()]
+            dox = doc and [x.strip() for x in doc.split('\n') if x.strip()] or \
+                  ["No documentation yet."]
             if len(dox)>1:
                 print
 
