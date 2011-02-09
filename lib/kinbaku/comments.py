@@ -15,9 +15,10 @@ class Comment(object):
         print '{lineno}:\t{dox}'.format(lineno=self.lineno,
                                           dox=dox, )
 
-    def __init__(self,lineno=-1, text='', full_line=False):
-        self.lineno=int(lineno)
-        self.text=text
+    def __init__(self,lineno=-1, text='', full_line=False,owner='??'):
+        self.owner     = owner
+        self.lineno    = int(lineno)
+        self.text      = text
         self.full_line = full_line
 
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
@@ -47,12 +48,17 @@ def extract_docstrings(content_raw,name):
     doctree      = parse_module(content_raw, name)
     doctree_list = doctree.traverse()#[ x for x in parse_module(content_raw, name) ]
     doctree_list = [ x for x in doctree_list if x.tagname=='docstring' ]
-    dox          = [ x[0].astext().split('\n') for x in doctree_list ]
+    dox          = [ [ x.parent[0].astext(),      # What the comment is for
+                       x[0].astext().split('\n'), # What the comment actually *is*
+                      ] \
+                     for x in doctree_list ]
+
     tmp          = [strip_string_markers(line) for line in lines]
     tmp_stripped = [x.strip() for x in tmp]
+
     ## correlate docstrings to line numbers
     ##  [ [[lineX, line1_comment1 ], [lineX+1, line2_comment1, ], [ [lineY, line1_comment2,],.. ]
-    for docstring in dox:
+    for owner_name, docstring in dox: # [x[-1] for x in dox]:
         row = []
         for line in docstring:
             try:
@@ -63,6 +69,7 @@ def extract_docstrings(content_raw,name):
             if line.strip():
                 row.append(Comment(lineno=lineno,
                                    text=line,
+                                   owner=owner_name,
                                    full_line=True))
         dox2.append(row)
     return dox2
@@ -79,6 +86,7 @@ class CommentsExtractor(KinbakuPlugin):
             as well as comments and displays them in order """
 
         def display_file(fpath):
+            """ """
             print console.blue('{fpath}'.format(fpath=fpath))
 
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
@@ -95,13 +103,13 @@ class CommentsExtractor(KinbakuPlugin):
 
                 ## merge lists by line number
                 out = docstrings + comments
-                out.sort(lambda x,y: cmp(x[0].lineno,y[0].lineno))
+                out.sort(lambda x,y: cmp(x[0].lineno, y[0].lineno))
 
                 ## display results
                 display_file(fpath)
                 for doc_group in out:
+                    if len(doc_group)>1:
+                        print '\n',console.blue(doc_group[0].owner), console.divider(display=False)
                     for comment in doc_group:
                         comment.display()
-                    if len(doc_group)>1:
-                        print '  ',console.divider(display=False)
 plugin = CommentsExtractor
