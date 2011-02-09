@@ -1,5 +1,6 @@
 import os
 
+from path import path
 from kinbaku.report import console, report
 from kinbaku.util import divider, remove_recursively
 from kinbaku.plugin import KinbakuPlugin
@@ -53,8 +54,20 @@ class CBContext(object):
 
 class Sandbox(object):
     """ CodeBase-Aspect Sandbox aspect of CodeBase """
+    def __xor__(self, fpath):
+        """ codebase^fpath:
+              if file is already mirrored, return the mirrored version,
+               otherwise return none
+        """
+        fpath = path(fpath)
+        for already_mirrored in path(self.pth_shadow).files():
+            if fpath.name == already_mirrored.name:
+                return already_mirrored
 
     def __mod__(self,fpath):
+        """ codebase%fpath:
+              mirrors a file and gets the absolute path to that file
+        """
         return (self>>fpath).real_path
 
     def __lshift__(self,fpath):
@@ -64,7 +77,8 @@ class Sandbox(object):
         raise NotImplemented
 
     def __rshift__(self,fpath):
-        """ mirrors a fpath into sandbox:
+        """ self>>fpath: mirrors a fpath into sandbox
+
               if this is called multiple times, it will get a fresh
               copy of the originating file each time..
         """

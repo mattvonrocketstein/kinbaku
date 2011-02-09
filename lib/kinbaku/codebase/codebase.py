@@ -3,6 +3,8 @@
 
 import os
 import pylint
+import compiler
+import parser
 
 from path import path
 from rope.base.project import Project
@@ -13,16 +15,18 @@ from kinbaku import analysis
 from kinbaku.util import report, is_python, groupby
 from kinbaku.codebase.bases import CBPlugin, Sandbox, CBContext
 from kinbaku.types import UnusableCodeError
-DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
+from kinbaku.plugin import publish_to_commandline
 
+DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
 USAGE = "codebase subparser usage "
 
 def map_over_files(func):
     """ """
     def likefilelines(self, *args,**kargs):
+        """ """
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
-from kinbaku.plugin import publish_to_commandline
+
 
 class CodeBase(CBContext, Sandbox, CBPlugin):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """
@@ -53,21 +57,24 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         return obj
 
     @publish_to_commandline
+    def names(self):
+        """ shows all names in codebase, sorted by file (AST walker) """
+        test        = lambda node: node.__class__.__name__=='Name'
+        walkage     = lambda fpath: ast.walk(ast.parse(open(fpath).read()))
+        fpath2names = lambda fpath: [ node.id for node in walkage(fpath) if test(node) ]
+        return dict([ [fpath, fpath2names(fpath)] for fpath in self.python_files ])
+
+    @publish_to_commandline
     def stats(self):
         """ Show various statistics for the codebase given codebase.
-            Currently, supported metrics include:
-              + file count (all)
-              + file count (python)
-              + line count
-              + word summary (only words that are statistically unlikely)
-              + valid booleans for each file
 
-            Coming soon:
-              + comment/code ratio
-              + average lines per file
-              * average imports per file
-              * total number of classes, functions
+            Currently, supported metrics include: file count (all files,
+            just python files), line count word summary (only words that
+            are statistically unlikely) valid booleans for each file
 
+            Coming soon: comment/code ratio, average lines per file,
+            average imports per file, total number of classes,
+            functions
         """
         from kinbaku.analysis import combine_word_summary
         ws = self.word_summary()
@@ -101,13 +108,33 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
 
+    def snapshot(self, static=True):
+        """ take snapshot of current codebase """
+        [ self>>fpath for fpath in self.files(python=True) ]
+
+    def has_changed(self, fpath):
+        """
+        """
+        before       = open(fpath,'r').read()
+        after        = open((self^fpath),'r').read()
+        file_changed = not( before == after )
+        ast_changed  = compiler.parse(before,'exec')==compiler.parse(after,'exec')
+
+        out = dict( file_changed=file_changed,
+                    ast_changed=ast_changed )
+        return out
+
     @publish_to_commandline
     def files(self, python=False):
         """ returns a list path() objects """
         if not self.pth_root or not os.path.exists(self.pth_root):
             return []
             #raise UnusableCodeError, "nonexistent path {p}".format(p=self.pth_root)
-        all_files = path(self.pth_root).files()
+        pth_root = path(self.pth_root)
+        if not pth_root.isdir():
+            all_files = [pth_root]
+        else:
+            all_files = pth_root.files()
         if python:
             out = filter(is_python, all_files)
         else:
@@ -170,7 +197,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
         pattern, goal, rules = name, '', {}
 
         ## Mirror code-files-only into the sandbox
-        [ self>>fpath for fpath in self.files(python=True) ]
+        self.snapshot()
 
         ## Setup and grab data from rope-restructuring
         strukt  = restructure.Restructure(self.project, pattern, goal, rules)
