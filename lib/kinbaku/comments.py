@@ -8,18 +8,7 @@ from docutils.readers.python.moduleparser import parse_module
 from kinbaku.report import console, report
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.codebase import plugin as CodeBase
-
-class Comment(object):
-    def display(self):
-        dox = console.color(self.text).rstrip()
-        print '{lineno}:\t{dox}'.format(lineno=self.lineno,
-                                          dox=dox, )
-
-    def __init__(self,lineno=-1, text='', full_line=False,owner='??'):
-        self.owner     = owner
-        self.lineno    = int(lineno)
-        self.text      = text
-        self.full_line = full_line
+from kinbaku.types import Comment
 
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
 def extract_comments(content_lines):
