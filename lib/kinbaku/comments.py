@@ -7,6 +7,43 @@ from docutils.readers.python.moduleparser import parse_module
 
 from kinbaku.report import console, report
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
+from kinbaku.codebase import plugin as CodeBase
+
+strip_string_markers = lambda line: line.replace('"','').replace("'",'')
+def extract_comments(content_lines):
+    """
+    ## derive comment strings, correlate them with line numbers:
+    ##  [ [lineN, comment1], [lineM, comment2], .. ]
+    """
+    comments  = []
+    contents_raw3 = content_lines
+    for line in contents_raw3:
+        if '#' in line:
+            line2 = line[line.find('#'):]
+            comments.append([[contents_raw3.index(line),line2]])
+    return comments
+def extract_docstrings(content_raw,name):
+    """
+    ## derive document strings:
+    ##  [ [line1_comment1,line2_comment1], [line1_comment2],.. ]
+    """
+    dox2      = []
+    doctree   = [ x for x in parse_module(content_raw, name) ]
+    doctree   = [ x for x in doctree if x.tagname=='docstring' ]
+    dox       = [ x[0].astext().split('\n') for x in doctree ]
+    out       = [strip_string_markers(line) for line in content_raw.split('\n')]
+
+    ## correlate docstrings to line numbers
+    ##  [ [[lineX, line1_comment1 ], [lineX+1, line2_comment1, ], [ [lineY, line1_comment2,],.. ]
+    for docstring in dox:
+        row = []
+        for line in docstring:
+            try: lineno = out.index(line + '\n')
+            except ValueError: lineno='?'
+            if line.strip():
+                row.append([lineno, line])
+        dox2.append(row)
+    return dox2
 
 class CommentsExtractor(KinbakuPlugin):
     """ """
@@ -18,39 +55,35 @@ class CommentsExtractor(KinbakuPlugin):
     def extract(self, input_file_or_dir):
         """ extracts both module/class/function documentation,
             as well as comments and displays them in order """
-        from kinbaku.codebase import plugin as CodeBase
+
+        def display_file(fpath):
+            print console.blue('{fpath}'.format(fpath=fpath))
+        def display_comment(lineno,dox):
+            print '  {lineno}:\t{dox}'.format(lineno=lineno,
+                                              dox=console.color(dox).rstrip())
+
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
             self.codebase = codebase
             for fpath in codebase.python_files:
-                print console.blue('{fpath}'.format(fpath=fpath))
-                # validate file
-                contents  = open(fpath).read()
-                contents2 = [line.replace('"','').replace("'",'') for line in open(fpath).readlines()]
-                doctree   = [ x for x in parse_module(contents,fpath.name) ]
-                dox       = [ x[0].astext().split('\n') for x in doctree if x.tagname=='docstring' ]
-                dox2      = []
-                for docstring in dox:
-                    docstring2=[]
-                    for line in docstring:
-                        try: lineno = contents2.index(line+'\n')
-                        except ValueError: lineno='?'
-                        if line.strip():
-                            docstring2.append([lineno,line])
-                    dox2.append(docstring2)
-                comments  = []
-                contents3 = open(fpath).readlines()
-                for line in contents3:
-                    if '#' in line:
-                        line2 = line[line.find('#'):]
-                        comments.append([[contents3.index(line),line2]])
-                ## merge lists by lineno
-                dox3 = dox2+comments
-                dox3.sort(lambda x,y: cmp(x[0][0],y[0][0]))
+                # TODO: validate file
 
-                for doc_group in dox3:
+                fhandle       = lambda: open(fpath)
+                content_raw   = fhandle().read()
+                content_lines = fhandle().readlines()
+
+                docstrings  = extract_docstrings(content_raw, fpath.name)
+                comments    = extract_comments(content_lines)
+
+                ## merge lists by line number
+                out = docstrings + comments
+                out.sort(lambda x,y: cmp(x[0][0],y[0][0]))
+
+                ## display results
+                display_file(fpath)
+                for doc_group in out:
                     for doc in doc_group:
                         lineno,dox = doc
-                        print '  {lineno}:\t{dox}'.format(lineno=lineno,dox=console.color(dox).rstrip())
+                        display_comment(lineno,dox)
                     #if len(doc_group)>1:
                     #    print '  ',console.divider(display=False)
 
