@@ -71,7 +71,7 @@ def extract_docstrings(content_raw,name):
                                    text=line,
                                    owner=owner_name,
                                    full_line=True))
-        dox2.append(row)
+        if row: dox2.append(row)
     return dox2
 
 class CommentsExtractor(KinbakuPlugin):
@@ -103,7 +103,8 @@ class CommentsExtractor(KinbakuPlugin):
 
                 ## merge lists by line number
                 out = docstrings + comments
-                out.sort(lambda x,y: cmp(x[0].lineno, y[0].lineno))
+                if docstrings and comments:
+                    out.sort(lambda x,y: cmp(x[0].lineno, y[0].lineno))
 
                 ## display results
                 display_file(fpath)
