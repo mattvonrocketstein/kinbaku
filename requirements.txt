@@ -1,3 +1,4 @@
+docutils
 path.py
 pygments
 pyflakes
@@ -5,3 +6,4 @@ rope
 pylint
 pep362
 pythoscope
+git+git://github.com/mattvonrocketstein/multimethods-py.git#egg=multimethods
