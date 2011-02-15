@@ -11,6 +11,7 @@ from kinbaku.codebase import plugin as CodeBase
 from kinbaku.types import Comment
 
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
+
 def extract_comments(content_lines):
     """
     ## derive comment strings, correlate them with line numbers:
@@ -70,14 +71,46 @@ class CommentsExtractor(KinbakuPlugin):
         return CommentsExtractor()
 
     @publish_to_commandline
+    def ratio(self, input_file_or_dir):
+        """ """
+        if path(input_file_or_dir).isdir():
+            for fpath in [x for x in path(input_file_or_dir).files() if x.endswith('.py')]:
+                print fpath
+                self.ratio(fpath)
+                print
+                print
+            return
+
+        groups = self._extract(input_file_or_dir)
+        if groups:
+            count  = [ [1 for comment in group] for group in groups]
+            num_comments = sum([sum(subcount) for subcount in count ])
+            total_lines=len(open(input_file_or_dir).readlines())
+            nratio = str(1.0*num_comments/total_lines)[:5]
+
+            msg0 = "  ratio {T}".format(T=nratio)
+            msg1 = "  total_lines {T}".format(T=total_lines)
+            msg2 = "  total_comment_lines {N}".format(N=num_comments)
+            msg3 = "  total_comments {K}".format(K=len(groups))
+            msg4 = "  avg_lines_group {M}".format(M=num_comments*1.0/len(groups))
+
+            print msg0
+            print msg3
+            print msg1
+            print msg2
+            print msg4
+
+    @publish_to_commandline
     def extract(self, input_file_or_dir):
         """ extracts both module/class/function documentation,
             as well as comments and displays them in order """
 
+        self._extract(input_file_or_dir, quiet=False)
+
+    def _extract(self, input_file_or_dir, quiet=True):
         def display_file(fpath):
             """ """
             print console.blue('{fpath}'.format(fpath=fpath))
-
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
             self.codebase = codebase
             for fpath in codebase.python_files:
@@ -96,10 +129,13 @@ class CommentsExtractor(KinbakuPlugin):
                     out.sort(lambda x,y: cmp(x[0].lineno, y[0].lineno))
 
                 ## display results
-                display_file(fpath)
-                for doc_group in out:
-                    if len(doc_group)>1:
-                        print '\n',console.blue(doc_group[0].owner), console.divider(display=False)
-                    for comment in doc_group:
-                        comment.display()
+                if not quiet:
+                    display_file(fpath)
+                    for doc_group in out:
+                        if len(doc_group)>1:
+                            print '\n',console.blue(doc_group[0].owner), console.divider(display=False)
+                        for comment in doc_group:
+                            comment.display()
+        return out
+
 plugin = CommentsExtractor
