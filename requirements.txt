@@ -4,6 +4,7 @@ pygments
 pyflakes
 rope
 pylint
+pep8
 pep362
 pythoscope
 git+git://github.com/mattvonrocketstein/multimethods-py.git#egg=multimethods
