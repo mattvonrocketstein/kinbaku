@@ -128,19 +128,25 @@ class Plugin(object):
                                                                   plugin  = modname,
                                                                   name    = name,
                                                                   sig     = func_sig)
-            dox = doc and [x.strip() for x in doc.split('\n') if x.strip()] or \
-                  ["No documentation yet."]
-            if len(dox)>1:
-                print
+            if doc:
+                dox =  [x.strip() for x in doc.split('\n') if x.strip()]
+            else:
+                 dox = ["No documentation yet."]
 
             for line in dox:
                 ex = _ex
-                if dox.index(line)!=0:
+                first_loop = not dox.index(line)!=0
+                if first_loop:
                     ex=' '*len(_ex)
                 if line.startswith('+'): line = '  ' + line[1:]
-                print ' '*indent + ' {example}{space1}{doc}'.format(example=ex,
-                                                    space1=' '*(45-len(ex)),
-                                                    doc=line or "")
+                out = ' {first}{space1}{doc}'
+                out = out.format(first='',
+                                 space1=' ',#*(45-len(ex)),
+                                 doc='')
+                out = ' '*indent + out
+                if first_loop:
+                    print '\n\t'+_ex
+                print '\t'+out + line or ""
 
 
     @classmethod
