@@ -24,7 +24,7 @@ class console:
             def func(string,_print=False):
                 z = x + string + TermColors.Normal
                 if _print:
-                    print z
+                    print >> sys.stderr, z
                 return z
             return func
         else:
@@ -43,7 +43,7 @@ class console:
     @staticmethod
     def draw_line(length=80,msg='',display=True):
         #out = style.ERROR('-' * length)
-        print
+        print >> sys.stderr
         afterl = (length-len(msg)-2)
         endred = endblue = TermColors.Normal
         msg    = msg and ' '+msg.strip()+' '
@@ -92,9 +92,9 @@ def report(*args, **kargs):
         ## If it can be formatted, apply kargs towards that effort
         if hasattr(main,'format'):
             try:
-                print console.color(main.format(**kargs)).strip()
+                print >> sys.stderr, console.color(main.format(**kargs)).strip()
             except KeyError:
-                print console.color(main)#,kargs
+                print >> sys.stderr, console.color(main)#,kargs
             else:
                 used_kargs = True
 
@@ -111,7 +111,7 @@ def report(*args, **kargs):
             for arg in args:
                 print >> sys.stderr, '{prefix}{n} :: {arg}'.format(prefix=prefix, n=args.index(arg),
                                                              arg=console.color(str(arg)).strip()),
-            print
+            print >> sys.stderr
 
     if kargs and not used_kargs:
         print >> sys.stderr, '\n\tkargs({n})='.format(n=len(kargs))
