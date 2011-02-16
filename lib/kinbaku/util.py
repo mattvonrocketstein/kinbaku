@@ -1,4 +1,4 @@
-"""
+""" kinbaku.util
 """
 import os, time
 import sys, shutil

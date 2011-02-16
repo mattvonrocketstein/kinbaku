@@ -14,7 +14,7 @@ from kinbaku import analysis
 
 from kinbaku.util import report, is_python, groupby
 from kinbaku.codebase.bases import CBPlugin, Sandbox, CBContext
-from kinbaku.types import UnusableCodeError
+from kinbaku._types import UnusableCodeError
 from kinbaku.plugin import publish_to_commandline
 
 DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
