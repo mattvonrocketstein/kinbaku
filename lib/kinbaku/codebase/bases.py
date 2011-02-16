@@ -9,32 +9,7 @@ from rope.contrib import generate
 from rope.base.exceptions import RopeError
 
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
-class CBPlugin(KinbakuPlugin):
-    """
-    @classmethod
-    def hook(kls, args, options, name=None, path=None, **kargs):
-        with kls(path, gloves_off=True) as codebase:
-            try:
-                func = getattr(codebase, name)
-            except AttributeError:
-                report("Plugin@{plugin} is not publishing a subparser for \"{name}\"",
-                       plugin=codebase, name=name)
-                sys.exit()
-            report("running {f} with {a}, {k}",
-                   f=func.__name__, a=args, k=options)
-            result = func(*args)
-            kls.display_results(result)
 
-    @staticmethod
-    def display_results(result):
-       """ """
-       if isinstance(result,list):
-           report(*result)
-       elif isinstance(result,dict):
-           report(**result)
-       else:
-           report("Not sure how to deal with answer:", result)
-    """
 class CBContext(object):
     """ CodeBase-Aspect azucar syntactico: contextmanager protocol """
     def __exit__(self, type, value, tb):
