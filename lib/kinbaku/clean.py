@@ -6,7 +6,7 @@ from path import path
 from kinbaku.report import console, report
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.codebase import plugin as CodeBase
-from kinbaku.types import Comment
+from kinbaku._types import Comment
 
 class Cleaner(KinbakuPlugin):
     """ """
@@ -16,7 +16,7 @@ class Cleaner(KinbakuPlugin):
         return Cleaner()
 
     @publish_to_commandline
-    def clean_imports(self, input_file_or_dir):
+    def imports(self, input_file_or_dir):
         """ cleans and reorganizes module imports..
         """
         from rope.refactor.importutils import ImportTools, importinfo, add_import

@@ -8,7 +8,7 @@ from docutils.readers.python.moduleparser import parse_module
 from kinbaku.report import console, report
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.codebase import plugin as CodeBase
-from kinbaku.types import Comment
+from kinbaku._types import Comment
 
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
 

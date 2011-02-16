@@ -66,3 +66,5 @@ def _remove_recursively(path):
         os.remove(path)
     else:
         shutil.rmtree(path)
+
+import shlex
