@@ -3,7 +3,6 @@
 
 import os
 import pylint
-import compiler
 import parser
 
 from path import path
@@ -44,10 +43,20 @@ class CBPlugin(KinbakuPlugin):
         #print 'returning obj',obj
         return obj
     @publish_to_commandline
-    def search(self, name):
-        """ ex: kinbaku codebase search "zam" """
-        result = self._search(name)
+    def ast(self, fpath):
+        """zonk"""
+        from kinbaku.codebase.walkers import walker
+        foo = compiler.parse(open(fpath).read())
+        printAst(foo, initlevel=1)
 
+    from kinbaku.codebase.search import imports, functions
+    imports = publish_to_commandline(imports)
+    functions = publish_to_commandline(functions)
+
+    @publish_to_commandline
+    def search(self, name):
+        """ searches only python variable names """
+        result = self._search(name)
         #out=[]
         out={}
         for match1 in result.get('change_map',[]):
