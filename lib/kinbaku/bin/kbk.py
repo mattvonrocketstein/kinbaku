@@ -1,13 +1,5 @@
 #!/usr/bin/env python
 """ kinbaku.bin.kinbaku:  the command line script
-
-    $ kinbaku code --path=$HOME/code --search foobar
-    $ kinbaku code --path=$HOME/code --search foobar --rules inst:xyz
-
-    $ kinbaku detect --path=$HOME/code --tests
-
-    $ kinbaku validate --path=$HOME/code
-
 """
 import copy, sys
 
@@ -26,11 +18,15 @@ def fpath2namespace(fpath):
 def parser():
     """ builds the parser object """
     from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option("-f", "--file", dest="filename", help="use FILE", metavar="FILE")
-    parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=True, help="don't print status messages to stdout")
-    parser.add_option("-s", "--search", dest="search", default=True, help="..")
-    parser.add_option("-p", "--path", dest="path",  default='', help="..")
+    class Parser(OptionParser):
+        def error(self, msg):
+            pass
+
+    parser = Parser()
+    #parser.add_option("-f", "--file", dest="filename", help="use FILE", metavar="FILE")
+    #parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=True, help="don't print status messages to stdout")
+    #parser.add_option("-s", "--search", dest="search", default=True, help="..")
+    #parser.add_option("-p", "--path", dest="path",  default='', help="..")
     return parser
 
 def announce_discovery(fpath,plugin_obj):
@@ -66,27 +62,28 @@ def show_all_plugins():
     """ displays all plugins and their
         options in an easy to read menu """
     matches = plugin_search_results()
-    print "\n Help for sub-commands:\n"
+    #print "\n Help for sub-commands:\n"
     for match in matches:
         fpath, plugin = match
-        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-        print ' ', fpath2namespace(fpath).upper()
-        #try:
         plugin_obj = plugin.spawn()
-        #except TypeError, t:
-        #    raise TypeError, str(t)+'\nExpectedSignature: '+str(signature(plugin_obj.__init__)._parameters)
+        subcommands = plugin_obj.get_subcommands()
+        if subcommands:
+            print ' ', fpath2namespace(fpath).upper()+':',str(tuple(subcommands)).replace("'",'')
+
         plugin_obj.help(indent=3)
 
 
 def handle_main_argument(args, options):
     """ get a subparser and dispatch """
 
+    ## Just subcomand name or "help"
     try: main = args[0]
     except IndexError:
         show_all_plugins(); sys.exit()
     else:
         if main=='help':
             show_all_plugins(); sys.exit()
+
 
     try:
         import_line = 'kinbaku.{plugin}'.format(plugin=main)
@@ -98,21 +95,21 @@ def handle_main_argument(args, options):
     else:
         plugin = getattr(plugin_mod, 'plugin',None)
         if not plugin:
-            report('Code not retrieve "plugin" from {mod}',mod=plugin_mod)
+            reporpt('Code not retrieve "plugin" from {mod}',mod=plugin_mod)
             sys.exit()
-        #try:
         plugin_obj = plugin.spawn()
-        #except TypeError:
-        #    raise Exception, signature(plugin_obj.__init__)._parameters
-        plugin_obj.parse_args(args[1:], options)
+        args  = args[1:] # cut off plugin name
+        args  = filter(lambda x: not x.startswith('--'),args)
+        plugin_obj.parse_args(args, options)
 
 def entry():
     """ """
     if "--help" in sys.argv:
         show_all_plugins(); sys.exit()
     else:
-        (options, args) = parser().parse_args()
-        handle_main_argument(args,options)
+        p=parser()
+        (options, args) = p.parse_args()
+        handle_main_argument(args, options)
 
 if __name__=='__main__':
     entry()
