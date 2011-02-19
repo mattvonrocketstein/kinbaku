@@ -13,9 +13,10 @@ from kinbaku._types import Comment
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
 
 def extract_comments(content_lines):
-    """
-    ## derive comment strings, correlate them with line numbers:
-    ##  [ [lineN, comment1], [lineM, comment2], .. ]
+    """ docutil does not appear to provide a way to do this.
+
+      ## derive comment strings, correlate them with line numbers:
+      ##  [ [lineN, comment1], [lineM, comment2], .. ]
     """
     comments  = []
     contents_raw3 = content_lines
@@ -24,7 +25,7 @@ def extract_comments(content_lines):
             line2 = line[line.find('#'):]
             #comments.append([[contents_raw3.index(line),line2]])
             comments.append([Comment(lineno=contents_raw3.index(line),
-                                     text=line2,
+                                     text=line2, owner="hash-comment",
                                      full_line=line.strip()==line2.strip())])
     return comments
 
@@ -33,22 +34,23 @@ def extract_docstrings(content_raw,name):
     ## derive document strings:
     ##  [ [line1_comment1,line2_comment1], [line1_comment2],.. ]
     """
-    lines        = content_raw.split('\n')
     dox2         = []
+    lines        = content_raw.split('\n')
     doctree      = parse_module(content_raw, name)
     doctree_list = doctree.traverse()#[ x for x in parse_module(content_raw, name) ]
     doctree_list = [ x for x in doctree_list if x.tagname=='docstring' ]
-    dox          = [ [ x.parent[0].astext(),      # What the comment is for
+
+    dox          = [ [ x.parent,               # What the comment is for
                        x[0].astext().split('\n'), # What the comment actually *is*
                       ] \
                      for x in doctree_list ]
-
+    #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
     tmp          = [strip_string_markers(line) for line in lines]
     tmp_stripped = [x.strip() for x in tmp]
 
     ## correlate docstrings to line numbers
     ##  [ [[lineX, line1_comment1 ], [lineX+1, line2_comment1, ], [ [lineY, line1_comment2,],.. ]
-    for owner_name, docstring in dox: # [x[-1] for x in dox]:
+    for parent, docstring in dox: # [x[-1] for x in dox]:
         row = []
         for line in docstring:
             try:
@@ -59,7 +61,7 @@ def extract_docstrings(content_raw,name):
             if line.strip():
                 row.append(Comment(lineno=lineno,
                                    text=line,
-                                   owner=owner_name,
+                                   owner=parent,
                                    full_line=True))
         if row: dox2.append(row)
     return dox2
@@ -67,8 +69,7 @@ def extract_docstrings(content_raw,name):
 class CommentsExtractor(KinbakuPlugin):
     """ """
     @classmethod
-    def spawn(kls, **kargs):
-        return CommentsExtractor()
+    def spawn(kls, **kargs):  return CommentsExtractor()
 
     @publish_to_commandline
     def ratio(self, input_file_or_dir):
@@ -83,10 +84,10 @@ class CommentsExtractor(KinbakuPlugin):
 
         groups = self._extract(input_file_or_dir)
         if groups:
-            count  = [ [1 for comment in group] for group in groups]
+            count        = [ [1 for comment in group] for group in groups]
             num_comments = sum([sum(subcount) for subcount in count ])
-            total_lines=len(open(input_file_or_dir).readlines())
-            nratio = str(1.0*num_comments/total_lines)[:5]
+            total_lines  = len(open(input_file_or_dir).readlines())
+            nratio       = str(1.0*num_comments/total_lines)[:5]
 
             msg0 = "  ratio {T}".format(T=nratio)
             msg1 = "  total_lines {T}".format(T=total_lines)
@@ -104,15 +105,25 @@ class CommentsExtractor(KinbakuPlugin):
     def extract(self, input_file_or_dir):
         """ extracts both module/class/function documentation,
             as well as comments and displays them in order """
-
-        self._extract(input_file_or_dir, quiet=False)
-
-    def _extract(self, input_file_or_dir, quiet=True):
         def display_file(fpath):
             """ """
             print console.blue('{fpath}'.format(fpath=fpath))
+        print input_file_or_dir
+        fpath, lst_of_comment_lsts = self._extract(input_file_or_dir)
+        ## display results
+        if True:
+            display_file(fpath)
+            for comment_lst in lst_of_comment_lsts:
+                #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+                owner_display = console.blue(comment_lst[0].rowner())
+                print '\nin "{owner}":'.format(owner=owner_display)
+                print '\n'.join([str(comment) for comment in comment_lst])
+
+    def _extract(self, input_file_or_dir):
+        """ """
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
             self.codebase = codebase
+            #print codebase.files()
             for fpath in codebase.python_files:
                 # TODO: validate file
 
@@ -128,14 +139,6 @@ class CommentsExtractor(KinbakuPlugin):
                 if docstrings and comments:
                     out.sort(lambda x,y: cmp(x[0].lineno, y[0].lineno))
 
-                ## display results
-                if not quiet:
-                    display_file(fpath)
-                    for doc_group in out:
-                        if len(doc_group)>1:
-                            print '\n',console.blue(doc_group[0].owner), console.divider(display=False)
-                        for comment in doc_group:
-                            comment.display()
-        return out
+        return fpath, out
 
 plugin = CommentsExtractor
