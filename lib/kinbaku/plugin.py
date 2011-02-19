@@ -51,8 +51,10 @@ def oparser_from_sig(func_sig):
             if val: kargs.update(dict(default=val, action="store_false"))
             else:   kargs.update(dict(default=val, action="store_true"))
         else:
-            raise Exception
-        obj.add_option("--"+name, **kargs)
+            kargs={} # abort.. not sure what to do yet
+            #raise Exception,[name,val]
+        if kargs:
+            obj.add_option("--"+name, **kargs)
 
     return obj
 

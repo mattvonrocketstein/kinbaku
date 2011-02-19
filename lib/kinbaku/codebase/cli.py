@@ -2,12 +2,11 @@
 """
 import os
 
-from path import path
-
-from kinbaku.util import report, is_python, groupby
-
 from kinbaku.plugin import KinbakuPlugin
 from kinbaku.plugin import publish_to_commandline
+from kinbaku.util import is_python
+from path import path
+
 
 class CBPlugin(KinbakuPlugin):
     """ """
