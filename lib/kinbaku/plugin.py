@@ -5,7 +5,7 @@ import copy
 import sys, os
 import inspect
 
-from types import BooleanType
+from types import BooleanType,StringType
 from optparse import OptionParser
 
 from path import path
@@ -52,6 +52,8 @@ def oparser_from_sig(func_sig):
         if isinstance(val,BooleanType):
             if val: kargs.update(dict(default=val, action="store_false"))
             else:   kargs.update(dict(default=val, action="store_true"))
+        if isinstance(val, StringType):
+            kargs.update(default=val)
         else:
             kargs={} # abort.. not sure what to do yet
             #raise Exception,[name,val]
@@ -100,6 +102,11 @@ class Plugin(object):
             options, _ = parser.parse_args()
             options    = options2dictionary(options)
             kargs      = options
+            if args and 'help' in args:
+                print "Help for {func_sig}".format(func_sig='.'.join([instance.__class__.__name__,interface_name]))
+                parser.print_help()
+                sys.exit()
+                #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         else:
             kargs = {}
 
@@ -115,6 +122,7 @@ class Plugin(object):
 
         #report("running {f} with {a}, {k}", f=func.__name__, a=args, k=options)
         #print '*'*80,args, kargs
+
         result = func(*args, **kargs)
         #kls.display_results(result)
 
