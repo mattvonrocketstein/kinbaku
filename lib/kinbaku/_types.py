@@ -3,6 +3,9 @@
 import os
 from kinbaku.report import console, report
 
+import compiler, ast
+from sourcecodegen.generation import ModuleSourceCodeGenerator,generate_code
+
 # TODO: find a way around this monkey patch
 import pep362
 from pep362 import Signature as JohnHancock
@@ -35,22 +38,39 @@ class FileCoverage:
         self.cover=cover
 
     def affected(self):
-
-        import compiler, ast
+        """ returns [lineno,line] for lines that lack coverage """
         content_raw  = open(self.fname,'r').read()
+        dammit = compiler.parse(content_raw)
+        def walk(node,parent=None):
+            """ walker for ast rooted at <node> """
+            #print node
+            if node is None: pass
+            elif isinstance(node,str): pass#rint node
+            elif isinstance(node,int): pass#rint node
+            else:
+                if isinstance(node,list):
+                    [ walk(child,parent=node) for child in node ]
+                elif isinstance(node,tuple):
+                    [ walk(child,parent=node) for child in node ]
+                else:
+                    if hasattr(node,'lineno') and node.lineno in self.linenos:
+                        src_code = generate_code(parent).strip()
+                        if node.lineno in results:   results[node.lineno] += [src_code]
+                        else:                        results[node.lineno]  = [src_code]
+                    [ walk(child,parent=node) for child in node.getChildren() ]
+        results = {}; walk(dammit)
 
-        results1 = {}
-        for node in ast.walk(ast.parse(content_raw)):
-            if hasattr(node,'lineno') and node.lineno in self.linenos:
-                if node.lineno in results1: results1[node.lineno] += [node]
-                else:                       results1[node.lineno]  = [node]
-        return results1.values()
+        out = []
+        for lineno in results:
+            cleaned = [ [len(src), src] for src in results[lineno] ]
+            out.append([lineno, cleaned[0][1]])
+        return out
 
-        #    results2.append([ [node.lineno, type(node).__name__] for node in sorted(results1)])
-        #return results2
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
     def __str__(self):
         return "<Coverage: {stuff}>".format(stuff=str([self.fname,self.cover]))
+
 class UnusableCodeError(ValueError):
     pass
 

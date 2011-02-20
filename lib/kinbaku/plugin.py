@@ -87,7 +87,7 @@ def oparser_from_sig(func_sig):
         if isinstance(val,BooleanType):
             if val: kargs.update(dict(default=val, action="store_false"))
             else:   kargs.update(dict(default=val, action="store_true"))
-        if isinstance(val, StringType):
+        elif isinstance(val, StringType):
             kargs.update(default=val)
         else:
             kargs={} # abort.. not sure what to do yet
