@@ -65,7 +65,7 @@ class Run(KinbakuPlugin):
 
 
     @publish_to_commandline
-    def cvg(self, fpath, lines=False, containers=False, exclude=''):
+    def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
         """ runs coverage on <fpath>:
                when lines is True, will show lines that are missing
                from coverage. when "containers" is True, will show
@@ -78,10 +78,16 @@ class Run(KinbakuPlugin):
         for fpath_coverage in results:
             print ' ', fpath_coverage.original_line
             #print '\t', fpath_coverage.affected() #_ast, affected = fpath_coverage.affected()
+            if objects:
+                print '   Objects missing from coverage:'
+                for lineno,line in fpath_coverage.objects_missing_from_coverage():
+                    print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
+
             if lines:
                 print '   Lines missing from coverage:'
-                for lineno,line in fpath_coverage.affected():
+                for lineno,line in fpath_coverage.lines_missing_from_coverage():
                     print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
+
         print console.divider(display=False)
 
 plugin = Run
