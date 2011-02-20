@@ -37,7 +37,7 @@ class FileCoverage:
         self.miss=miss
         self.cover=cover
 
-    def affected(self):
+    def lines_missing_from_coverage(self):
         """ returns [lineno,line] for lines that lack coverage """
         content_raw  = open(self.fname,'r').read()
         dammit = compiler.parse(content_raw)
@@ -66,6 +66,38 @@ class FileCoverage:
             out.append([lineno, cleaned[0][1]])
         return out
 
+    def objects_missing_from_coverage(self):
+        """ returns [lineno,line] for lines that lack coverage """
+        content_raw  = open(self.fname,'r').read()
+        dammit = compiler.parse(content_raw)
+        def walk(node,parent=None,lineage=[]):
+            """ walker for ast rooted at <node> """
+            #print node
+            if node is None: pass
+            elif isinstance(node,str): pass#rint node
+            elif isinstance(node,int): pass#rint node
+            else:
+
+                if isinstance(node,list):
+                    [ walk(child,parent=node,lineage=lineage+[parent]) for child in node ]
+                elif isinstance(node,tuple):
+                    [ walk(child,parent=node,lineage=lineage+[parent]) for child in node ]
+                else:
+                    #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+                    if hasattr(node,'lineno') and node.lineno in self.linenos:
+                        src_code = generate_code(lineage[-1]) # source for container
+                        src_code = src_code.split('\n')[0] #strip()
+                        src_code = console.color(src_code).strip()
+                        if node.lineno in results:   results[node.lineno] += [src_code]
+                        else:                        results[node.lineno]  = [src_code]
+                    [ walk(child,parent=node,lineage=lineage+[parent]) for child in node.getChildren() ]
+        results = {}; walk(dammit)
+
+        out = []
+        for lineno in results:
+            cleaned = [ [len(src), src] for src in results[lineno] ]
+            out.append([lineno, cleaned[0][1]])
+        return out
         #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
     def __str__(self):
