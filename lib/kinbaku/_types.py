@@ -1,5 +1,6 @@
 """ kinbaku.types
 """
+import os
 from kinbaku.report import console, report
 
 # TODO: find a way around this monkey patch
@@ -21,13 +22,33 @@ pep362.Signature=Signature
 
 class FileCoverage:
     """ tracks coverage metadata for a specific file """
-    def __init__(self, linenos=[], fname='',
+    def __init__(self, linenos=[], fname='', original_line='',
                  statements=0, miss=0,cover=0):
         self.linenos=linenos
         self.fname=fname
+        if not os.path.exists(self.fname) and not\
+               self.fname.endswith('.py'):
+            self.fname+='.py'
         self.statements=statements
+        self.original_line=original_line
         self.miss=miss
         self.cover=cover
+
+    def affected(self):
+
+        import compiler, ast
+        content_raw  = open(self.fname,'r').read()
+
+        results1 = {}
+        for node in ast.walk(ast.parse(content_raw)):
+            if hasattr(node,'lineno') and node.lineno in self.linenos:
+                if node.lineno in results1: results1[node.lineno] += [node]
+                else:                       results1[node.lineno]  = [node]
+        return results1.values()
+
+        #    results2.append([ [node.lineno, type(node).__name__] for node in sorted(results1)])
+        #return results2
+
     def __str__(self):
         return "<Coverage: {stuff}>".format(stuff=str([self.fname,self.cover]))
 class UnusableCodeError(ValueError):

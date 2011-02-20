@@ -9,6 +9,7 @@ from path import path
 from kinbaku.util import _import
 from kinbaku.util import report, is_python, groupby
 from kinbaku.util import divider, remove_recursively
+from kinbaku.report import report,console
 def fpath2namespace(fpath):
     namespace  = fpath.namebase
     if namespace == '__init__':
@@ -68,8 +69,15 @@ def show_all_plugins():
         plugin_obj = plugin.spawn()
         subcommands = plugin_obj.get_subcommands()
         if subcommands:
-            print ' ', fpath2namespace(fpath).upper()+':',str(tuple(subcommands)).replace("'",'')
+            namespace = console.red(fpath2namespace(fpath)).strip()
+            #subcommands = tuple(subcommands)
+            subcommands = str(subcommands)
+            subcommands = subcommands.replace("'",'').replace(', ',' | ')
 
+            subcommands = console.color(subcommands)
+            hdr = '{namespace} {subcommands}'.format(subcommands=subcommands,
+                                                         namespace=namespace).rstrip()
+            print ' \n ',hdr
         plugin_obj.help(indent=3)
 
 
