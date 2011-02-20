@@ -12,7 +12,41 @@ from path import path
 from kinbaku._types import Signature
 from pep362 import signature
 
-from kinbaku.report import report
+from kinbaku.report import report,console
+position     = lambda parameters, k:   parameters[k].position
+display1     = lambda k:   '<{k}>'.format(k=k)
+def dvdisplay(p):
+    """ default-value display for parameter p """
+    fmt = {'k':p.name,
+           'deflt':p.default_value}
+    if p.default_value is not None:
+        return '[<{k}={deflt}>]'.format(**fmt)
+    else:
+        return ('[<{k}>]'.format(**{'k':p.name}))
+
+def prepare_sig(func,modname):
+    progname   = os.path.split(sys.argv[0])[1]
+    sig        = signature(func)
+    parameters = sig._parameters
+
+    sort_machine = lambda x, y: cmp(x[0],y[0])
+    func_sig   = [ [position(parameters, k), k, parameters[k] ] for k in parameters.keys() ]
+    func_sig.sort(sort_machine) # sort args by their position in signature
+
+    func_sig   = [ display(x) for x in func_sig ]
+    func_sig   = func_sig[1:] # probably an instancemethod.. chop off "self"
+    func_sig   = ' '.join(func_sig)
+
+    _ex = "{kinbaku} {plugin} {name} {sig}"
+    _ex = _ex.format(kinbaku = progname, name = sig.name,
+                             plugin = modname, sig = func_sig)
+    return _ex
+
+def display(t):
+    if hasattr(t[2],'default_value'):
+        return dvdisplay(t[2])
+    else:
+        return display1(t[1])
 
 def options2dictionary(options):
     """ conversion to dictionary  from an optparser.options instance """
@@ -102,29 +136,35 @@ class Plugin(object):
             options, _ = parser.parse_args()
             options    = options2dictionary(options)
             kargs      = options
+
+            # clean up things that are in both args/kargs because
+            #  of the weird way this stuff is getting parsed..
+            if len(args)>len(kargs):
+                for v in kargs.values():
+                    if v in args:
+                        args.pop(args.index(v))
+
+            # answer "help" in a context-sensitive way if it's
+            # somewhere on the command line
             if args and 'help' in args:
                 print "Help for {func_sig}".format(func_sig='.'.join([instance.__class__.__name__,interface_name]))
                 parser.print_help()
                 sys.exit()
-                #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         else:
             kargs = {}
-
 
         parent = kls.__name__.lower()
         if not is_published_to_commandline(func):
             err  = '\nERROR:  Interface "{I}" is not published on plugin "{P}".'
+            err  = console.red(error)
             err += '\n        For help using this plugin, try: "{progname} {P} help"'
             fmt  = dict(I=interface_name, P=parent,progname=sys.argv[0],)
             err  = err.format(**fmt)
             print err
             sys.exit()
 
-        #report("running {f} with {a}, {k}", f=func.__name__, a=args, k=options)
-        #print '*'*80,args, kargs
-
-        result = func(*args, **kargs)
-        #kls.display_results(result)
+        #print args,kargs
+        result = func(*args, **kargs) #kls.display_results(result)
 
     def get_subcommands(self):
         """ """
@@ -135,16 +175,9 @@ class Plugin(object):
     @publish_to_commandline
     def help(self, indent=0):
         """ shows help for this plugin """
-        position     = lambda parameters, k:   parameters[k].position
-        def display(t):
-            if hasattr(t[2],'default_value'):
-                return dvdisplay(t[2])
-            else:
-                return display1(t[1])
 
         cls_names = self.get_subcommands()
         modname   = self.__class__.__module__.lower().split('.')[-1]
-
         if not indent:
             print "->",modname.upper()
             indent=3
@@ -154,28 +187,9 @@ class Plugin(object):
             doc        = func.__doc__
             parent     = self.__class__.__name__.lower()
 
-            progname   = os.path.split(sys.argv[0])[1]
-            sig        = signature(func)
-            parameters = sig._parameters
 
-            display1     = lambda k:   '<{k}>'.format(k=k)
-            dvdisplay    = lambda p:   (p.default_value is not None and \
-                                        '[<{k}={deflt}>]'.format(**{'k':p.name,
-                                                                  'deflt':p.default_value})) or \
-                                       ('[<{k}>]'.format(**{'k':p.name}))
-
-            sort_machine = lambda x, y: cmp(x[0],y[0])
-
-            func_sig   = [ [position(parameters, k), k, parameters[k] ] for k in parameters.keys() ]
-            func_sig.sort(sort_machine) # sort args by their position in signature
-
-            func_sig   = [ display(x) for x in func_sig ]
-            func_sig   = func_sig[1:] # probably an instancemethod.. chop off "self"
-            func_sig   = ' '.join(func_sig)
-
-            _ex = "{kinbaku} {plugin} {name} {sig}"
-            _ex = _ex.format(kinbaku = progname, name = name,
-                             plugin = modname, sig = func_sig)
+            _ex = prepare_sig(func,modname)
+            _ex = console.blue(_ex)
             if doc:
                 dox =  [x.strip() for x in doc.split('\n') if x.strip()]
             else:
@@ -187,14 +201,15 @@ class Plugin(object):
                 if first_loop:
                     ex=' '*len(_ex)
                 if line.startswith('+'): line = '  ' + line[1:]
-                out = ' {first}{space1}{doc}'
+                out = '{indent} {first}{space1}{doc}'
                 out = out.format(first='',
                                  space1=' ',#*(45-len(ex)),
+                                 indent = ' '*indent,
                                  doc='')
-                out = ' '*indent + out
+                #out =  + out
                 if first_loop:
                     print '\n\t'+_ex
-                print '\t'+out + line or ""
+                print '\t' + out + line or ""
         return cls_names
 
     @classmethod
