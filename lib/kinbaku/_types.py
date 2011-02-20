@@ -19,6 +19,17 @@ class Signature(JohnHancock):
         return dict([[k, v.default_value] for k,v in items])
 pep362.Signature=Signature
 
+class FileCoverage:
+    """ tracks coverage metadata for a specific file """
+    def __init__(self, linenos=[], fname='',
+                 statements=0, miss=0,cover=0):
+        self.linenos=linenos
+        self.fname=fname
+        self.statements=statements
+        self.miss=miss
+        self.cover=cover
+    def __str__(self):
+        return "<Coverage: {stuff}>".format(stuff=str([self.fname,self.cover]))
 class UnusableCodeError(ValueError):
     pass
 
@@ -46,13 +57,6 @@ class Comment(object):
         tmp = [tpl[1] for tpl in tmp]
         tmp= '.'.join(tmp)
         return tmp
-        #out = ""
-        #for kind,label in tmp:
-
-        return str()
-#[self.owner.tagname,str(self.owner[0].astext()),p,pp,pp])
-               #replace("<docstring>",'module-').replace("</docstring>",'').\
-               #replace("<object_name>",'').replace("</object_name>",'').strip()
 
 
     def __str__(self):
