@@ -65,18 +65,23 @@ class Run(KinbakuPlugin):
 
 
     @publish_to_commandline
-    def cvg(self, fpath, exclude=''):
-        """ runs coverage on fpath: equivalent to
-              coverage run $FPATH; coverage report $FPATH |grep -v $EXCLUDE
+    def cvg(self, fpath, lines=False, containers=False, exclude=''):
+        """ runs coverage on <fpath>:
+               when lines is True, will show lines that are missing
+               from coverage. when "containers" is True, will show
+               methods or classes that are missing from coverage.
+               if "exclude" is given, then filenames not matching
+               will not be included in the output.
         """
         header, results = self._cvg(fpath,exclude=exclude)
-        print ' ', header, '\n', console.divider(display=False)
+        print ' {hdr}\n{div}'.format(hdr=header,div=console.divider(display=False))
         for fpath_coverage in results:
             print ' ', fpath_coverage.original_line
-            #print '\t', fpath_coverage.affected()
-            affected = fpath_coverage.affected()
-            from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-
+            #print '\t', fpath_coverage.affected() #_ast, affected = fpath_coverage.affected()
+            if lines:
+                print '   Lines missing from coverage:'
+                for lineno,line in fpath_coverage.affected():
+                    print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
         print console.divider(display=False)
 
 plugin = Run
