@@ -25,6 +25,7 @@ def dvdisplay(p):
         return ('[<{k}>]'.format(**{'k':p.name}))
 
 def prepare_sig(func,modname):
+    """ prepare a legible, context-senstive signature from func """
     progname   = os.path.split(sys.argv[0])[1]
     sig        = signature(func)
     parameters = sig._parameters
@@ -130,6 +131,9 @@ class Plugin(object):
         func   = getattr(instance, interface_name, None)
         if func is None: panic(kls)
         func_sig = signature(func)
+
+        # if this function has default values, we'll dynamically
+        # generate an appropriate options-parser to use those values
         if func_sig.has_default_values:
             # discards the arguments, keeping original
             parser     = oparser_from_sig(func_sig)
@@ -158,7 +162,7 @@ class Plugin(object):
             err  = '\nERROR:  Interface "{I}" is not published on plugin "{P}".'
             err  = console.red(error)
             err += '\n        For help using this plugin, try: "{progname} {P} help"'
-            fmt  = dict(I=interface_name, P=parent,progname=sys.argv[0],)
+            fmt  = dict(I=interface_name, P=parent, progname=sys.argv[0],)
             err  = err.format(**fmt)
             print err
             sys.exit()
@@ -179,7 +183,7 @@ class Plugin(object):
         cls_names = self.get_subcommands()
         modname   = self.__class__.__module__.lower().split('.')[-1]
         if not indent:
-            print "->",modname.upper()
+            print "->", modname.upper()
             indent=3
 
         for name in cls_names:
@@ -187,29 +191,23 @@ class Plugin(object):
             doc        = func.__doc__
             parent     = self.__class__.__name__.lower()
 
+            _ex = console.blue(prepare_sig(func,modname))
 
-            _ex = prepare_sig(func,modname)
-            _ex = console.blue(_ex)
-            if doc:
-                dox =  [x.strip() for x in doc.split('\n') if x.strip()]
-            else:
-                 dox = ["No documentation yet."]
+            if doc: dox =  filter(None, [x.strip() for x in doc.split('\n')] )
+            else:   dox = [ "No documentation yet." ]
 
             for line in dox:
                 ex = _ex
                 first_loop = not dox.index(line)!=0
-                if first_loop:
-                    ex=' '*len(_ex)
+                if first_loop:           ex   = ' '*len(_ex)
                 if line.startswith('+'): line = '  ' + line[1:]
                 out = '{indent} {first}{space1}{doc}'
-                out = out.format(first='',
+                out = out.format(first='',doc ='',
                                  space1=' ',#*(45-len(ex)),
-                                 indent = ' '*indent,
-                                 doc='')
-                #out =  + out
+                                 indent = ' '*indent,)
                 if first_loop:
-                    print '\n\t'+_ex
-                print '\t' + out + line or ""
+                    print '\t'+ _ex
+                print '\t'+ out + line or ""
         return cls_names
 
     @classmethod
