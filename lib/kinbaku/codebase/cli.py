@@ -1,7 +1,14 @@
 """ kinbaku.codebase.cli
 """
 import os
+import pprint
 
+from pylint import lint
+from pyflakes.scripts.pyflakes import checkPath
+
+from kinbaku.report import report,console
+from kinbaku.analysis import combine_word_summary
+from kinbaku.analysis import pychecker_helper
 from kinbaku.plugin import KinbakuPlugin
 from kinbaku.plugin import publish_to_commandline
 from kinbaku.util import is_python
@@ -13,9 +20,6 @@ class CBPlugin(KinbakuPlugin):
     @classmethod
     def spawn(kls, path=None, **kargs):
         """ """
-        #from tempfile import mktemp
-        #root = mktemp(dir=kls.shadow_container(), prefix='codebase_')
-        #print kargs; sys.exit()
         if not path:
             from kinbaku.config import Config
             config = Config.spawn()
@@ -52,8 +56,22 @@ class CBPlugin(KinbakuPlugin):
         fpath2names = lambda fpath: [ node.id for node in walkage(fpath) if test(node) ]
         return dict([ [fpath, fpath2names(fpath)] for fpath in self.python_files ])
 
+
     @publish_to_commandline
-    def stats(self):
+    def validate(self,fpath):
+        pychecker_helper()
+
+    @publish_to_commandline
+    def validate(self, fpath):
+        """ validate file """
+        #results = self._stats(fpath)
+        pyflakes = self.pyflakes
+        #results.get('validation')
+        for item in self.messages():
+            print '\n'.join(str(msg.__class__) for msg in item.messages)
+
+    @publish_to_commandline
+    def stats(self,fpath):
         """ Show various statistics for the codebase given codebase.
 
             Currently, supported metrics include: file count (all files,
@@ -64,15 +82,54 @@ class CBPlugin(KinbakuPlugin):
             average imports per file, total number of classes,
             functions
         """
-        from kinbaku.analysis import combine_word_summary
+        results = self._stats(fpath)
+        validations = results.get('validation')
+        for item in results.items():
+            pprint.pprint(item)
+
+    @publish_to_commandline
+    def errors(self, fpath):
+            return self.messages(fpath,filters='UndefinedName')
+
+    @publish_to_commandline
+    def messages(self, fpath, filters=""):
+        """ messages from pyflakes: prints message type, file, and pyflakes error to stdout  """
+        if isinstance(filters,str): filters=filters.split()
+        filters = [x.lower() for x in filters]
+        messages = self.pyflakes_messages(fpath)
+        _type = lambda m: m.__class__.__name__.lower()
+        fmessages = [[msg,_type(msg),_type(msg) in filters ] for msg in messages]
+        fmessages = [msg for msg in messages if _type(msg) in filters ]
+        for m in fmessages:
+            print console.color("{type} {M}".format(type=m.__class__.__name__,M=m)).strip()
+
+    def pyflakes_messages(self, fpath):
+        checker = self.pyflakes(fpath).values()[0]
+        if isinstance(checker,int): # syntaxerror?
+            return [SyntaxError]
+        return checker.messages
+
+    def pyflakes(self,fpath=None):
+        """ returns a dict of fname:pyflakes.checker """
+        if fpath:
+            out = dict([[fpath,pychecker_helper(open(fpath).read(), fpath)] ])
+        else:
+            out = dict([[fpath,pychecker_helper(open(fpath).read(), fpath)] for fpath in self.files(python=True)])
+        #print [type(x.messages[0]) for x in out]
+        return out
+
+    def _stats(self,fpath):
+        """ """
         ws = self.word_summary()
         ws.update(combine_word_summary(ws))
         words_in_all_files = [ ws[fpath].keys() for fpath in ws ]
-        valid_files        = [pylint(fpath) for fpath in self.files(python=True)]
+        pyflakes        = self.pyflakes
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         return dict( file_count    = self.count_files,
                      py_file_count = self.count_py_files,
                      lines_count   = self.count_lines,
-                     word_summary  = ws, valid=valid_files, )
+                     word_summary  = ws,
+                     validation=pyflakes, )
 
     @publish_to_commandline
     def shell(self):
