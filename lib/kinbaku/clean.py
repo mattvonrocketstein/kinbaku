@@ -22,10 +22,6 @@ def stdin2tmpfile(fpath):
 class Cleaner(KinbakuPlugin):
     """ """
 
-    @classmethod
-    def spawn(kls, **kargs):
-        return Cleaner()
-
     @publish_to_commandline
     def whitespace(self, fpath):
         """ trims trailing whitespace (newlines are untouched) """
