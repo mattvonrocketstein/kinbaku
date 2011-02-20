@@ -134,8 +134,8 @@ class CommentsExtractor(KinbakuPlugin):
 
                 ## merge lists by line number
                 out = []
-                if docstrings: out+=doc_strings
-                if comments: out+=komments
+                if docstrings: out += doc_strings
+                if comments: out   += komments
                 out.sort(lambda x,y: cmp(x[0].lineno, y[0].lineno))
                 return fpath, out
 plugin = CommentsExtractor
