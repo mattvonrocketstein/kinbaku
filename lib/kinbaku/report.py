@@ -43,7 +43,6 @@ class console:
     @staticmethod
     def draw_line(length=80,msg='',display=True):
         #out = style.ERROR('-' * length)
-        print >> sys.stderr
         afterl = (length-len(msg)-2)
         endred = endblue = TermColors.Normal
         msg    = msg and ' '+msg.strip()+' '
@@ -52,9 +51,9 @@ class console:
         out    = '{red}--{endred}{blue}{msg}{endblue}{red}{rest}{endred}'
         out    = out.format(red=red,blue=blue,endred=endred,endblue=endblue,
                          msg=msg, rest= '-'* afterl)
-
         if display:
             print >> sys.stderr, out
+            #print out
         return out
     divider=draw_line
 
