@@ -4,7 +4,12 @@
 import copy
 import sys, os
 import inspect
+
+from types import BooleanType
+from optparse import OptionParser
+
 from path import path
+from kinbaku._types import Signature
 from pep362 import signature
 
 from kinbaku.report import report
@@ -12,34 +17,31 @@ from kinbaku.report import report
 def options2dictionary(options):
     """ conversion to dictionary  from an optparser.options instance """
     options         = eval(str(options))
-    #options['path'] = path
     return options
 
 def publish_to_commandline(func):
     """ decorator for plugin methods """
     func.is_published_to_commandline = True
     return func
+
 def is_published_to_commandline(func):
     """ detects functions that have been marked for publishcation """
     return hasattr(func,'is_published_to_commandline')
 
-
 def panic(kls):
-    print
-    kls().help()
+    print; kls().help();
     sys.exit()
 
 def get_path_from_config():
-    # NOTE: do not move import..
+    """ Gets "path" by way of the Config-plugin.
+        NOTE: do not move import..
+    """
     from kinbaku.config import Config
-    # Get "path" by way of the Config-plugin.
     path = Config().get('path', os.getcwd())
     if not os.path.exists(path):
         path = os.getcwd()
     return path
 
-from types import BooleanType
-from optparse import OptionParser
 def oparser_from_sig(func_sig):
     """ """
     class Foo(OptionParser):
@@ -55,7 +57,6 @@ def oparser_from_sig(func_sig):
             #raise Exception,[name,val]
         if kargs:
             obj.add_option("--"+name, **kargs)
-
     return obj
 
 class Plugin(object):
@@ -63,8 +64,6 @@ class Plugin(object):
     @classmethod
     def parse_args(kls, args, options):
         """ receives cascaded args/options """
-
-
         try: interface_name = args[0]
         except IndexError: ## Not even a function name
             panic(kls)
@@ -92,7 +91,7 @@ class Plugin(object):
                 kls=kls.__name__, options=options))
             sys.exit()
 
-        func   = getattr(instance, interface_name,None)
+        func   = getattr(instance, interface_name, None)
         if func is None: panic(kls)
         func_sig = signature(func)
         if func_sig.has_default_values:
@@ -117,7 +116,7 @@ class Plugin(object):
         #report("running {f} with {a}, {k}", f=func.__name__, a=args, k=options)
         #print '*'*80,args, kargs
         result = func(*args, **kargs)
-        kls.display_results(result)
+        #kls.display_results(result)
 
     def get_subcommands(self):
         """ """
@@ -128,6 +127,13 @@ class Plugin(object):
     @publish_to_commandline
     def help(self, indent=0):
         """ shows help for this plugin """
+        position     = lambda parameters, k:   parameters[k].position
+        def display(t):
+            if hasattr(t[2],'default_value'):
+                return dvdisplay(t[2])
+            else:
+                return display1(t[1])
+
         cls_names = self.get_subcommands()
         modname   = self.__class__.__module__.lower().split('.')[-1]
 
@@ -149,25 +155,19 @@ class Plugin(object):
                                         '[<{k}={deflt}>]'.format(**{'k':p.name,
                                                                   'deflt':p.default_value})) or \
                                        ('[<{k}>]'.format(**{'k':p.name}))
-            position     = lambda k:   parameters[k].position
+
             sort_machine = lambda x, y: cmp(x[0],y[0])
 
-            func_sig   = [ [position(k), k, parameters[k] ] for k in parameters.keys() ]
+            func_sig   = [ [position(parameters, k), k, parameters[k] ] for k in parameters.keys() ]
             func_sig.sort(sort_machine) # sort args by their position in signature
-
-            def display(t):
-                if hasattr(t[2],'default_value'):
-                    return dvdisplay(t[2])
-                else:
-                    return display1(t[1])
 
             func_sig   = [ display(x) for x in func_sig ]
             func_sig   = func_sig[1:] # probably an instancemethod.. chop off "self"
             func_sig   = ' '.join(func_sig)
-            _ex        = "{kinbaku} {plugin} {name} {sig}".format(kinbaku = progname,
-                                                                  plugin  = modname,
-                                                                  name    = name,
-                                                                  sig     = func_sig)
+
+            _ex = "{kinbaku} {plugin} {name} {sig}"
+            _ex = _ex.format(kinbaku = progname, name = name,
+                             plugin = modname, sig = func_sig)
             if doc:
                 dox =  [x.strip() for x in doc.split('\n') if x.strip()]
             else:
