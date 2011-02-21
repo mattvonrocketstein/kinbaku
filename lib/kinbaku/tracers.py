@@ -90,26 +90,68 @@ class Snooper(CallTracer):
 
     def snoop(self, frame, func_name, func_line_no, func_filename,
               caller_line_no, caller_filename,):
-        msg = '  Call to "{fname}"\n    {cline}:{cfile} ---> {fline}:{fpath}'
+        msg = '  In function: "{fname}"\n    {cline}:{cfile} ---> {fline}:{fpath}'
         msg = msg.format(fname = console.red(str(func_name)),
                          fline = console.blue(str(func_line_no)),
                          fpath = console.red(str(func_filename)),
                          cline = console.blue(str(caller_line_no)),
                          cfile = console.red(str(caller_filename)))
         print msg
-
         return trace_lines
 
 def trace_lines(frame, event, arg):
-    if event != 'line': return
+    if event not in ['line','return']: return
+    if event=='return':
+        return trace_return(frame,event,arg)
     co = frame.f_code
     func_name = co.co_name
     line_no = frame.f_lineno
     filename = co.co_filename
 
-    msg = '{fname} line {fline}\n\t {locals}'
-    msg = msg.format(fname=func_name, fline=line_no,
-                     locals=console.color(str(frame.f_locals)))
-    hdr = console.red('    ->  ')
+    msg = 'line {fline}:\t {locals}'
+    msg = msg.format(fname=func_name, fline=console.blue(str(line_no)),
+                     locals=console.color(str(frame.f_locals))).strip()
+    hdr = console.red('    ::  ')
     print hdr+msg
+    return trace_lines
+
+def trace_return(frame, event, arg):
+    """ """
+    if arg==eval(repr(arg)):
+        print console.red ('    -> atom: ') + console.color(str(arg))
+    else:
+        print console.blue('    -> composite: ') + console.color(str(arg))
+    return
+
     #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+"""
+
+import sys
+import functools
+
+def withlocals(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwds):
+        f_locals = {}
+        def probe(frame, event, arg):
+            if event == 'return':
+                f_locals.update(frame.f_locals)
+                return probe
+            sys.settrace(probe)
+            try: res = f(*args,**kwds)
+            finally: sys.settrace(None)
+            return (res, f_locals)
+    return wrapper
+
+# example
+
+@withlocals
+def foo(x, y=0, *args, **kwds):
+a = max(x,y)
+b = len(args)
+c = min(kwds.values())
+return a+b+c
+
+r,locs = foo(1,2,3,4,a=5,b=6)
+print locs
+"""

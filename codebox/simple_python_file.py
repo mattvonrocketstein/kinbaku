@@ -17,7 +17,7 @@ class Klass(object):
 @snoop
 def f():
     a = 1
-    return 3
+    return 32
 def g():
     return 4
 
