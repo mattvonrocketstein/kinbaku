@@ -23,6 +23,29 @@ class Signature(JohnHancock):
         return dict([[k, v.default_value] for k,v in items])
 pep362.Signature=Signature
 
+node_has_lineno = lambda node: hasattr(node,'lineno')
+def walk(node, parent=None, lineage=[], test=None, results={},callback=None):
+            """ walker for ast rooted at <node> """
+
+            if node is None: pass
+            elif isinstance(node,str): pass#rint node
+            elif isinstance(node,int): pass#rint node
+            else:
+                if isinstance(node, (list,tuple)):
+                    [ walk(child, parent=node,
+                           lineage=lineage+[parent],
+                           callback=callback,
+                           test=test) for child in node ]
+                else:
+                    children = node.getChildren()
+                    if test(node):
+                        callback(node, parent, lineage)
+                    [ walk(child,parent=node,
+                           lineage=lineage+[parent],
+                           callback=callback,
+                           test=test) for child in children]
+
+
 class FileCoverage:
     """ tracks coverage metadata for a specific file """
     def __init__(self, linenos=[], fname='', original_line='',
@@ -37,28 +60,22 @@ class FileCoverage:
         self.miss=miss
         self.cover=cover
 
+    def node_in_missed_lines(self,node):
+        return node_has_lineno(node) and node.lineno in self.linenos
+
     def lines_missing_from_coverage(self):
         """ returns [lineno,line] for lines that lack coverage """
         content_raw  = open(self.fname,'r').read()
-        dammit = compiler.parse(content_raw)
-        def walk(node,parent=None):
-            """ walker for ast rooted at <node> """
-            #print node
-            if node is None: pass
-            elif isinstance(node,str): pass#rint node
-            elif isinstance(node,int): pass#rint node
-            else:
-                if isinstance(node,list):
-                    [ walk(child,parent=node) for child in node ]
-                elif isinstance(node,tuple):
-                    [ walk(child,parent=node) for child in node ]
-                else:
-                    if hasattr(node,'lineno') and node.lineno in self.linenos:
-                        src_code = generate_code(parent).strip()
-                        if node.lineno in results:   results[node.lineno] += [src_code]
-                        else:                        results[node.lineno]  = [src_code]
-                    [ walk(child,parent=node) for child in node.getChildren() ]
-        results = {}; walk(dammit)
+        _ast = compiler.parse(content_raw)
+
+        def callback(node,parent,lineage):
+                src_code = generate_code(parent).strip()
+                lineno   = node.lineno
+                if node.lineno in results:   results[lineno] += [src_code]
+                else:                        results[lineno]  = [src_code]
+
+        results = {}; walk(_ast, test=self.node_in_missed_lines,
+                           callback=callback, )
 
         out = []
         for lineno in results:
@@ -69,29 +86,18 @@ class FileCoverage:
     def objects_missing_from_coverage(self):
         """ returns [lineno,line] for lines that lack coverage """
         content_raw  = open(self.fname,'r').read()
-        dammit = compiler.parse(content_raw)
-        def walk(node,parent=None,lineage=[]):
-            """ walker for ast rooted at <node> """
-            #print node
-            if node is None: pass
-            elif isinstance(node,str): pass#rint node
-            elif isinstance(node,int): pass#rint node
-            else:
+        _ast = compiler.parse(content_raw)
 
-                if isinstance(node,list):
-                    [ walk(child,parent=node,lineage=lineage+[parent]) for child in node ]
-                elif isinstance(node,tuple):
-                    [ walk(child,parent=node,lineage=lineage+[parent]) for child in node ]
-                else:
-                    #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-                    if hasattr(node,'lineno') and node.lineno in self.linenos:
-                        src_code = generate_code(lineage[-1]) # source for container
-                        src_code = src_code.split('\n')[0] #strip()
-                        src_code = console.color(src_code).strip()
-                        if node.lineno in results:   results[node.lineno] += [src_code]
-                        else:                        results[node.lineno]  = [src_code]
-                    [ walk(child,parent=node,lineage=lineage+[parent]) for child in node.getChildren() ]
-        results = {}; walk(dammit)
+        def callback(node,parent,lineage):
+            src_code = generate_code(lineage[-1]) # source for container
+            src_code = src_code.split('\n')[0] #strip()
+            src_code = console.color(src_code).strip()
+            if node.lineno in results:   results[node.lineno] += [src_code]
+            else:                        results[node.lineno]  = [src_code]
+        test = lambda node: node_has_lineno(node) and node.lineno in self.linenos
+        results = {}; walk(_ast, test=test,
+                           callback=callback,
+                           )
 
         out = []
         for lineno in results:
