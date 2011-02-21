@@ -3,7 +3,7 @@
 import os
 import inspect
 import sys
-
+from kinbaku.report import console
 SNOOP_REGISTRY = []
 
 class Fingerprint(object):
@@ -59,6 +59,7 @@ class CallTracer(Tracer):
         pass
 
 class Snooper(CallTracer):
+    """ """
     def is_snooped(self, func_name=None, func_filename=None, func=None):
         """ detects functions that have been marked for snooping """
         confessed        = hasattr(func, 'io_snoop')
@@ -80,9 +81,18 @@ class Snooper(CallTracer):
         if not watched: return
 
         if toplevel: self.handle_toplevel(**locals())
-        else:
-            msg = 'Call to %s on line %s of %s from line %s of %s'
-            print msg % (func_name, func_line_no,
-                         func_filename, caller_line_no,
+        else: self.snoop(func_name,
+                         func_line_no,
+                         func_filename,
+                         caller_line_no,
                          caller_filename)
-            return
+
+    def snoop(self, func_name, func_line_no, func_filename,
+              caller_line_no, caller_filename,):
+        msg = '  Call to "{fname}"\n    {cline}:{cfile} ---> {fline}:{fpath}'
+        msg = msg.format(fname = console.red(str(func_name)),
+                         fline = console.blue(str(func_line_no)),
+                         fpath = console.red(str(func_filename)),
+                         cline = console.blue(str(caller_line_no)),
+                         cfile = console.red(str(caller_filename)))
+        print msg
