@@ -13,8 +13,36 @@ from kinbaku.report import console, report
 from kinbaku.codebase import plugin as CodeBase
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
 from kinbaku._coverage import KinbakuFile, OLD_BANNER, convert, mine_cvg_output
+from kinbaku.tracers import Snooper
 
-class Run(KinbakuPlugin):
+class CLI(KinbakuPlugin):
+    @publish_to_commandline
+    def recordio(self,fpath):
+        """ dynamically analyze programs IO traffic """
+
+        sys.settrace(Snooper())
+        execfile(fpath)
+
+
+    @publish_to_commandline
+    def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
+        """ runs coverage on <fpath>:
+               when lines is True, will show lines that are missing
+               from coverage. when "containers" is True, will show
+               methods or classes that are missing from coverage.
+               if "exclude" is given, then filenames not matching
+               will not be included in the output.
+        """
+        header, results = self._cvg(fpath,exclude=exclude)
+        print ' {hdr}\n{div}'.format(hdr=header,div=console.divider(display=False))
+        for fpath_coverage in results:
+            print ' ',  fpath_coverage.original_line
+            if objects:
+                self.handle_objects(fpath_coverage)
+            elif lines:
+                self.handle_lines(fpath_coverage)
+
+class Run(CLI):
     """ """
     def _cvg(self, fpath, exclude=''):
         """ returns header,[ filecoverage_obj, ..] """
@@ -45,24 +73,6 @@ class Run(KinbakuPlugin):
 
         header = results[0]
         return header[:header.rfind(' ')],out
-
-    @publish_to_commandline
-    def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
-        """ runs coverage on <fpath>:
-               when lines is True, will show lines that are missing
-               from coverage. when "containers" is True, will show
-               methods or classes that are missing from coverage.
-               if "exclude" is given, then filenames not matching
-               will not be included in the output.
-        """
-        header, results = self._cvg(fpath,exclude=exclude)
-        print ' {hdr}\n{div}'.format(hdr=header,div=console.divider(display=False))
-        for fpath_coverage in results:
-            print ' ',  fpath_coverage.original_line
-            if objects:
-                self.handle_objects(fpath_coverage)
-            elif lines:
-                self.handle_lines(fpath_coverage)
 
     @staticmethod
     def handle_objects(coverage_obj):
