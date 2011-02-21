@@ -13,6 +13,14 @@ from kinbaku._types import Signature
 from pep362 import signature
 
 from kinbaku.report import report,console
+
+def str2list(x,split=' '):
+    """ """
+    if isinstance(x,list):
+        return x
+    if isinstance(x, str):#StringType
+        return filter(None,x.split(split))
+
 position     = lambda parameters, k:   parameters[k].position
 display1     = lambda k:   '<{k}>'.format(k=k)
 def dvdisplay(p):
