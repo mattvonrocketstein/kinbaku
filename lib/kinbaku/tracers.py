@@ -81,13 +81,14 @@ class Snooper(CallTracer):
         if not watched: return
 
         if toplevel: self.handle_toplevel(**locals())
-        else: self.snoop(func_name,
+        else: return self.snoop(frame, func_name,
                          func_line_no,
                          func_filename,
                          caller_line_no,
                          caller_filename)
 
-    def snoop(self, func_name, func_line_no, func_filename,
+
+    def snoop(self, frame, func_name, func_line_no, func_filename,
               caller_line_no, caller_filename,):
         msg = '  Call to "{fname}"\n    {cline}:{cfile} ---> {fline}:{fpath}'
         msg = msg.format(fname = console.red(str(func_name)),
@@ -96,3 +97,19 @@ class Snooper(CallTracer):
                          cline = console.blue(str(caller_line_no)),
                          cfile = console.red(str(caller_filename)))
         print msg
+
+        return trace_lines
+
+def trace_lines(frame, event, arg):
+    if event != 'line': return
+    co = frame.f_code
+    func_name = co.co_name
+    line_no = frame.f_lineno
+    filename = co.co_filename
+
+    msg = '{fname} line {fline}\n\t {locals}'
+    msg = msg.format(fname=func_name, fline=line_no,
+                     locals=console.color(str(frame.f_locals)))
+    hdr = console.red('    ->  ')
+    print hdr+msg
+    #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()

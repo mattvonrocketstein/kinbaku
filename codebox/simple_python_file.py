@@ -16,6 +16,7 @@ class Klass(object):
         return os.path.exists
 @snoop
 def f():
+    a = 1
     return 3
 def g():
     return 4
