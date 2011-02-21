@@ -2,9 +2,7 @@
 """
 import os
 from kinbaku.report import console, report
-
-import compiler, ast
-from sourcecodegen.generation import ModuleSourceCodeGenerator,generate_code
+from kinbaku._coverage import FileCoverage
 
 # TODO: find a way around this monkey patch
 import pep362
@@ -23,91 +21,6 @@ class Signature(JohnHancock):
         return dict([[k, v.default_value] for k,v in items])
 pep362.Signature=Signature
 
-node_has_lineno = lambda node: hasattr(node,'lineno')
-def walk(node, parent=None, lineage=[], test=None, results={},callback=None):
-            """ walker for ast rooted at <node> """
-
-            if node is None: pass
-            elif isinstance(node,str): pass#rint node
-            elif isinstance(node,int): pass#rint node
-            else:
-                if isinstance(node, (list,tuple)):
-                    [ walk(child, parent=node,
-                           lineage=lineage+[parent],
-                           callback=callback,
-                           test=test) for child in node ]
-                else:
-                    children = node.getChildren()
-                    if test(node):
-                        callback(node, parent, lineage)
-                    [ walk(child,parent=node,
-                           lineage=lineage+[parent],
-                           callback=callback,
-                           test=test) for child in children]
-
-
-class FileCoverage:
-    """ tracks coverage metadata for a specific file """
-    def __init__(self, linenos=[], fname='', original_line='',
-                 statements=0, miss=0,cover=0):
-        self.linenos=linenos
-        self.fname=fname
-        if not os.path.exists(self.fname) and not\
-               self.fname.endswith('.py'):
-            self.fname+='.py'
-        self.statements=statements
-        self.original_line=original_line
-        self.miss=miss
-        self.cover=cover
-
-    def node_in_missed_lines(self,node):
-        return node_has_lineno(node) and node.lineno in self.linenos
-
-    def lines_missing_from_coverage(self):
-        """ returns [lineno,line] for lines that lack coverage """
-        content_raw  = open(self.fname,'r').read()
-        _ast = compiler.parse(content_raw)
-
-        def callback(node,parent,lineage):
-                src_code = generate_code(parent).strip()
-                lineno   = node.lineno
-                if node.lineno in results:   results[lineno] += [src_code]
-                else:                        results[lineno]  = [src_code]
-
-        results = {}; walk(_ast, test=self.node_in_missed_lines,
-                           callback=callback, )
-
-        out = []
-        for lineno in results:
-            cleaned = [ [len(src), src] for src in results[lineno] ]
-            out.append([lineno, cleaned[0][1]])
-        return out
-
-    def objects_missing_from_coverage(self):
-        """ returns [lineno,line] for lines that lack coverage """
-        content_raw  = open(self.fname,'r').read()
-        _ast = compiler.parse(content_raw)
-
-        def callback(node,parent,lineage):
-            src_code = generate_code(lineage[-1]) # source for container
-            src_code = src_code.split('\n')[0] #strip()
-            src_code = console.color(src_code).strip()
-            if node.lineno in results:   results[node.lineno] += [src_code]
-            else:                        results[node.lineno]  = [src_code]
-        test = lambda node: node_has_lineno(node) and node.lineno in self.linenos
-        results = {}; walk(_ast, test=test,
-                           callback=callback,
-                           )
-
-        out = []
-        for lineno in results:
-            cleaned = [ [len(src), src] for src in results[lineno] ]
-            out.append([lineno, cleaned[0][1]])
-        return out
-        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-
-    def __str__(self):
-        return "<Coverage: {stuff}>".format(stuff=str([self.fname,self.cover]))
 
 class UnusableCodeError(ValueError):
     pass

@@ -37,14 +37,20 @@ class Run(KinbakuPlugin):
             results = results.replace(OLD_BANNER, console.divider(display=False))
             results = [r for r in results.split('\n') if r]
             out     = []
+            def convert(x):
+                if not x: return
+                try: return int(x)
+                except ValueError:
+                    return map(int,x.split('-'))
             for r in results:
                 #print r
                 if results.index(r)>1:
                     cvg_output_line = r.split()
                     miss,  cover      = cvg_output_line[2],cvg_output_line[3]
                     fname, statements = cvg_output_line[0],cvg_output_line[1]
+                    if fname=='TOTAL': print ''.join(r);continue
                     linenos   = ''.join(cvg_output_line[4:]).split(',')
-                    linenos   = map(int, linenos)
+                    linenos   = map(convert, linenos)
                     # NOTE: cuts off the "missed lines" bit, it's stored in "linenos"
                     original_line = r.split('%')[0]+'%'
                     fpath_cvg = FileCoverage(fname=fname, statements=statements,
@@ -92,5 +98,5 @@ class Run(KinbakuPlugin):
 
 plugin = Run
 
-if __name__=='__main__':
-    from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+#if __name__=='__main__':
+#    from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
