@@ -4,7 +4,7 @@ import os
 from kinbaku.report import console, report
 from kinbaku._coverage import FileCoverage
 
-# TODO: find a way around this monkey patch
+
 import pep362
 from pep362 import Signature as JohnHancock
 class Signature(JohnHancock):
@@ -19,15 +19,13 @@ class Signature(JohnHancock):
     def default_values(self):
         items = [[k,v] for k,v in self._parameters.items() if hasattr(v,'default_value')]
         return dict([[k, v.default_value] for k,v in items])
-pep362.Signature=Signature
+pep362.Signature=Signature # TODO: find a way around this monkey patch
 
 
-class UnusableCodeError(ValueError):
-    pass
+class UnusableCodeError(ValueError): pass
 
 class Comment(object):
-    def rparent(self):
-        pass
+    def rparent(self): pass
 
     def rowner(self):
         """ render owner """

@@ -1,6 +1,6 @@
 """ kinbaku.run
 """
-import StringIO
+
 import sys
 from path import path
 import tempfile
@@ -8,67 +8,43 @@ import tempfile
 from rope.refactor.importutils import ImportTools, importinfo, add_import
 from coverage.cmdline import main,CoverageScript
 
-
-from kinbaku.report import console, report
-from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
-from kinbaku.codebase import plugin as CodeBase
 from kinbaku._types import FileCoverage
-
-OLD_BANNER = '----------------------------------------------------------------------------------'
+from kinbaku.report import console, report
+from kinbaku.codebase import plugin as CodeBase
+from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
+from kinbaku._coverage import KinbakuFile, OLD_BANNER, convert, mine_cvg_output
 
 class Run(KinbakuPlugin):
     """ """
-
     def _cvg(self, fpath, exclude=''):
         """ returns header,[ filecoverage_obj, ..] """
+        out     = []
+        exclude = str2list(exclude)
+        results = KinbakuFile(fpath).run_cvg()
 
-        if isinstance(exclude,str): exclude=filter(None,exclude.split())
-        fhandle    = StringIO.StringIO("")
-        report_args = dict( morfs = [],
-                            ignore_errors = False,
-                            file = fhandle,
-                            omit = '', include = '', )
-        cscript = CoverageScript()
-        status = cscript.command_line(['run', fpath])
-        if status==0:
-            cscript.coverage.report(show_missing=True, **report_args)
-            fhandle.seek(0);
-            results = fhandle.read()
-            results = results.replace(OLD_BANNER, console.divider(display=False))
-            results = [r for r in results.split('\n') if r]
-            out     = []
-            def convert(x):
-                if not x: return
-                try: return int(x)
-                except ValueError:
-                    return map(int,x.split('-'))
-            for r in results:
-                #print r
-                if results.index(r)>1:
-                    cvg_output_line = r.split()
-                    miss,  cover      = cvg_output_line[2],cvg_output_line[3]
-                    fname, statements = cvg_output_line[0],cvg_output_line[1]
-                    if fname=='TOTAL': print ''.join(r);continue
-                    linenos   = ''.join(cvg_output_line[4:]).split(',')
-                    linenos   = map(convert, linenos)
-                    # NOTE: cuts off the "missed lines" bit, it's stored in "linenos"
-                    original_line = r.split('%')[0]+'%'
-                    fpath_cvg = FileCoverage(fname=fname, statements=statements,
-                                             original_line=original_line,
-                                             miss=miss, cover=cover,
-                                             linenos=linenos)
-                    if exclude:
-                        if not any([filtr in fname for filtr in exclude]):
-                            out.append(fpath_cvg)
-                    else:
-                        out.append(fpath_cvg)
+        results = results.replace(OLD_BANNER, console.divider(display=False))
+        results = [r for r in results.split('\n') if r]
 
-            header=results[0]
-            return header[:header.rfind(' ')],out
+        for r in results:
+            if not results.index(r)>1: continue
+            fname, miss, cover, linenos, original_line, statements = mine_cvg_output(r)
 
-        else:
-            raise Exception,['not sure what to do with cvg status:',status]
+            if fname=='TOTAL':
+                print ''.join(r)
+                continue
 
+            fc_kargs = dict( fname=fname, statements=statements,
+                             original_line=original_line, miss=miss,
+                             cover=cover, linenos=linenos )
+
+            fpath_cvg = FileCoverage(**fc_kargs)
+            if exclude:
+                if not any([filtr in fname for filtr in exclude]):
+                    out.append(fpath_cvg)
+            else:   out.append(fpath_cvg)
+
+        header = results[0]
+        return header[:header.rfind(' ')],out
 
     @publish_to_commandline
     def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
@@ -82,18 +58,27 @@ class Run(KinbakuPlugin):
         header, results = self._cvg(fpath,exclude=exclude)
         print ' {hdr}\n{div}'.format(hdr=header,div=console.divider(display=False))
         for fpath_coverage in results:
-            print ' ', fpath_coverage.original_line
-            #print '\t', fpath_coverage.affected() #_ast, affected = fpath_coverage.affected()
+            print ' ',  fpath_coverage.original_line
             if objects:
-                print '   Objects missing from coverage:'
-                for lineno,line in fpath_coverage.objects_missing_from_coverage():
-                    print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
+                self.handle_objects(fpath_coverage)
+            elif lines:
+                self.handle_lines(fpath_coverage)
 
-            if lines:
-                print '   Lines missing from coverage:'
-                for lineno,line in fpath_coverage.lines_missing_from_coverage():
-                    print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
+    @staticmethod
+    def handle_objects(coverage_obj):
+        print '   Objects missing from coverage:'
+        lst1 = coverage_obj.objects_missing_from_coverage()
+        lst2 = coverage_obj.lines_missing_from_coverage()
+        tmp=lst1+lst2
+        tmp.sort(lambda x,y: cmp(x[0],y[0]))
+        for lineno, line in tmp:
+            print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
 
+    @staticmethod
+    def handle_lines(coverage_obj):
+        print '   Lines missing from coverage:'
+        for lineno,line in coverage_obj.lines_missing_from_coverage():
+            print '\t{lineno}: {line}'.format(lineno=lineno,line=line)
         print console.divider(display=False)
 
 plugin = Run
