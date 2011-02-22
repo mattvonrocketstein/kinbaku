@@ -18,9 +18,10 @@ class Fingerprint(Bag):
     def __str__(self):
         D = dict(path=self.func_filename,
                  line=self.func_line_no,
+                 v=self.func_vals,
                  func_name=self.func_name,
                  retv = self.return_value,)
-        return "{path}:{line} {func_name} --> {retv}".format(**D)
+        return "{path}:{line}\n   {func_name}({v}) -->\n      {retv}".format(**D)
 
     def __equal__(self,other):
         """ """

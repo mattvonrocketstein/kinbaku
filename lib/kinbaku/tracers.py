@@ -1,8 +1,8 @@
 """ kinbaku.tracers
 """
-import os
 
-#from kinbaku.snoopy import Snooper,snoop
+import os
+import inspect
 
 class Tracer(object):
     """ tracer for use with sys.settrace """
@@ -13,6 +13,13 @@ class Tracer(object):
     lineno = func_line_no
     line_no = func_line_no
     line   = func_line_no
+
+    @property
+    def vals(self):
+        x = inspect.getargvalues(self.frame)
+        arguments = dict([ [arg, x.locals[arg]] for arg in  x.args ])
+        return arguments
+
 
     @property
     def caller_line_no(self):  return self.caller and self.caller.f_lineno

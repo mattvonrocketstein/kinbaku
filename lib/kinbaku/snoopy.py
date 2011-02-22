@@ -91,8 +91,10 @@ class Snooper(CallTracer):
 
     def record(self):
         """ """
+        from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         fprint = Fingerprint(func_name     = self.func_name,
                              func_filename = self.func_filename,
-                             func_line_no = self.func_line_no,
+                             func_line_no  = self.func_line_no,
+                             func_vals     = self.vals,
                              return_value  = self.return_value)
         self._record.append(fprint)
