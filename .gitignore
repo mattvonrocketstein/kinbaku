@@ -1,3 +1,7 @@
 *.pyc
 ve/*
 *.egg-info
+*,cover
+*.coverage
+build
+dist
