@@ -1,0 +1,69 @@
+$ kinbaku help
+
+  clean [imports | pep8 | whitespace]
+        kinbaku clean imports <fpath> [<inplace=False>] [<changes=False>]
+             cleans and reorganizes module imports for file @fpath,
+             displaying result on stdout.  pass the --changes flag
+             to see only the import lines and not the whole file.
+        kinbaku clean pep8 <fpath>
+             pep8ify's file a @fpath, displaying result on stdout
+        kinbaku clean whitespace <fpath>
+             trims trailing whitespace (newlines are untouched)
+
+
+  config [keys | set | show | wipe]
+        kinbaku config keys
+             show all keys in config dictionary
+        kinbaku config set
+             set a value in kinbaku's persistent configuration
+        kinbaku config show [<setting_name>]
+             display current configuration
+        kinbaku config wipe
+             destroys all of the persistent settings
+
+  scope [generate]
+        kinbaku scope generate <input_file_or_dir>
+             Generates empty unittests from project at @input_file_or_dir.
+             If input is a single file, the result will be sent to stdout.
+
+  comments [extract | ratio]
+        kinbaku comments extract <input_file_or_dir> [<comments=False>] [<docstrings=False>]
+             extract comments, organized by container.
+             if --docstrings is True, only docstring-style comments will be displayed.
+             if --comments is True, only hash-mark style comments will be displayed.
+             default is to show both.
+        kinbaku comments ratio <input_file_or_dir>
+             extract comment:code ratios
+
+  run [cvg | trace]
+        kinbaku run cvg <fpath> [<objects=False>] [<lines=False>] [<containers=False>] [<exclude=>]
+             runs coverage on <fpath>:
+             when lines is True, will show lines that are missing
+             from coverage. when "containers" is True, will show
+             methods or classes that are missing from coverage.
+             if "exclude" is given, then filenames not matching
+             will not be included in the output.
+        kinbaku run trace <fpath> [<names=>]
+             dynamically analyze programs IO traffic
+
+  codebase [errors | files | messages | names | search | shell | stats | validate]
+        kinbaku codebase errors <fpath>
+             No documentation yet.
+        kinbaku codebase files [<python=False>]
+             returns a list path() objects
+        kinbaku codebase messages <fpath> [<filters=>]
+             messages from pyflakes: prints message type, file, and pyflakes error to stdout
+        kinbaku codebase names
+             shows all names in codebase, sorted by file (AST walker)
+        kinbaku codebase search <name>
+             only searches python names
+        kinbaku codebase stats <fpath>
+             Show various statistics for the codebase given codebase.
+             Currently, supported metrics include: file count (all files,
+             just python files), line count word summary (only words that
+             are statistically unlikely) valid booleans for each file
+             Coming soon: comment/code ratio, average lines per file,
+             average imports per file, total number of classes,
+             functions
+        kinbaku codebase validate <fpath>
+             validate file
