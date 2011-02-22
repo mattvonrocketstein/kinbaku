@@ -43,23 +43,21 @@ class CallTracer(Tracer):
 
     def __call__(self, frame, event, arg):
         """ """
-        self.frame=frame
-        self.event=event
-        self.arg=arg
-        return self.handle()
-
-    def handle(self):
-        if self.event!='call':
+        self.frame = frame
+        self.event = event
+        self.arg   = arg
+        if self.event != 'call':
             return
         elif self.func_name == 'write':
             # Ignore write() calls from print statements
             return
         elif self.func_name=='<module>':
-            return self.handle_module(self.unc_filename)
-        elif toplevel:
+            return self.handle_module(self.func_filename)
+        elif self.toplevel:
             return self.handle_toplevel()
         else:
-            return self.handle_default()
+            return self.handle()
+
 
     def handle_toplevel(self):
         """ called only for module-level "calls"..
