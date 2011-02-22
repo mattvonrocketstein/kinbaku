@@ -1,4 +1,5 @@
 """ kinbaku.run
+    TODO: support in kbkplugin for kbk run <fpath> == kbk run trace <fpath>
 """
 
 import sys
@@ -13,13 +14,17 @@ from kinbaku.report import console, report
 from kinbaku.codebase import plugin as CodeBase
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
 from kinbaku._coverage import KinbakuFile, OLD_BANNER, convert, mine_cvg_output
-from kinbaku.tracers import Snooper
+from kinbaku.snoopy import Snooper
 
 class CLI(KinbakuPlugin):
     @publish_to_commandline
     def recordio(self,fpath):
-        """ dynamically analyze programs IO traffic """
+        """ pass """
 
+    @publish_to_commandline
+    def trace(self, fpath):
+        """ dynamically analyze programs IO traffic """
+        print ' ',console.red('tracing'),fpath
         sys.settrace(Snooper())
         execfile(fpath)
 
