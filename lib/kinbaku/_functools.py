@@ -15,7 +15,12 @@ class Bag(object):
 
 class Fingerprint(Bag):
     """ """
-    #def __str__(self):  return "F:"+str([self.func_name, self.func_filename])
+    def __str__(self):
+        D = dict(path=self.func_filename,
+                 line=self.func_line_no,
+                 func_name=self.func_name,
+                 retv = self.return_value,)
+        return "{path}:{line} {func_name} --> {retv}".format(**D)
 
     def __equal__(self,other):
         """ """
@@ -27,6 +32,7 @@ class Fingerprint(Bag):
 
     @classmethod
     def build_from(kls, func):
+        """ """
         return Fingerprint(func_name=func.func_name,
                            func_filename=inspect.getfile(func),
                            func=func)

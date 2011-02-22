@@ -8,8 +8,6 @@ class Tracer(object):
     """ tracer for use with sys.settrace """
     def __call__(self,frame,event,arg):
         pass
-
-class CallTracer(Tracer):
     @property
     def func_line_no(self):    return self.frame.f_lineno
     lineno = func_line_no
@@ -41,6 +39,9 @@ class CallTracer(Tracer):
     @property
     def toplevel(self):  return not self.caller
 
+class CallTracer(Tracer):
+    """ """
+
     def __call__(self, frame, event, arg):
         """ """
         self.frame = frame
@@ -58,11 +59,11 @@ class CallTracer(Tracer):
         else:
             return self.handle()
 
-
     def handle_toplevel(self):
         """ called only for module-level "calls"..
             the way the sys.settrace works is weird """
         pass
 
     def handle_module(self, fname):
+        """ """
         pass
