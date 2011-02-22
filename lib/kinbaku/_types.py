@@ -70,3 +70,12 @@ class Match(object):
 
     def __init__(self, **kargs):
         for k,v in kargs.items(): setattr(self,k,v)
+
+def is_atom(arg):
+    """ an argument is an atom iff it is
+        equal to the evaluation of it's
+        representation """
+    try:
+        return arg==eval(repr(arg))
+    except SyntaxError:
+        return False

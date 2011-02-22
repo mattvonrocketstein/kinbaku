@@ -1,10 +1,11 @@
 """ kinbaku.run
-    TODO: support in kbkplugin for kbk run <fpath> == kbk run trace <fpath>
 """
 
 import sys
-from path import path
+import pprint
 import tempfile
+from path import path
+
 
 from rope.refactor.importutils import ImportTools, importinfo, add_import
 from coverage.cmdline import main,CoverageScript
@@ -17,17 +18,23 @@ from kinbaku._coverage import KinbakuFile, OLD_BANNER, convert, mine_cvg_output
 from kinbaku.snoopy import Snooper
 
 class CLI(KinbakuPlugin):
+    """ """
     @publish_to_commandline
-    def recordio(self,fpath):
-        """ pass """
-
-    @publish_to_commandline
-    def trace(self, fpath):
+    def trace(self,fpath,names=''):
         """ dynamically analyze programs IO traffic """
-        print ' ',console.red('tracing'),fpath
-        sys.settrace(Snooper())
-        execfile(fpath)
 
+        console.divider()
+        print console.red("executing:")
+        console.divider()
+
+        snoopy = Snooper(str2list(names))
+        sys.settrace(snoopy);
+        execfile(fpath, dict(__name__='__main__'))
+
+        console.divider()
+        print console.red("recorded data:")
+        console.divider()
+        pprint.pprint(snoopy._record)
 
     @publish_to_commandline
     def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
@@ -81,6 +88,7 @@ class Run(CLI):
 
     @staticmethod
     def handle_objects(coverage_obj):
+        """ """
         print '   Objects missing from coverage:'
         lst1 = coverage_obj.objects_missing_from_coverage()
         lst2 = coverage_obj.lines_missing_from_coverage()
@@ -91,6 +99,7 @@ class Run(CLI):
 
     @staticmethod
     def handle_lines(coverage_obj):
+        """ """
         print '   Lines missing from coverage:'
         for lineno,line in coverage_obj.lines_missing_from_coverage():
             print '\t{lineno}: {line}'.format(lineno=lineno,line=line)

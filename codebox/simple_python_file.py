@@ -11,8 +11,6 @@
 
 """
 
-
-
 class Klass(object):
     """ docstring """
     def __init__(self):
@@ -21,19 +19,20 @@ class Klass(object):
     def method(self):
         return os.path.exists
 
-def f():
+def function_f():
     a = 1
     return 32
-def g():
+
+def function_g():
     return 4
 
 
 def a():
     def b(): x='in b()'
     x='in a()'; b()
-f(); a()
+function_f(); a()
 
 from kinbaku.snoopy import snoop
-f = snoop(f)
-f() # calling f a second time
+function_f = snoop(function_f)
+function_f() # calling f a second time
 print 'fin: executing a simple python file'

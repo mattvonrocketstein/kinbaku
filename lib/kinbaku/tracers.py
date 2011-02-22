@@ -1,68 +1,76 @@
 """ kinbaku.tracers
 """
-from kinbaku.report import console
 
-#from kinbaku.snoopy import snoop
+import os
+import inspect
 
 class Tracer(object):
     """ tracer for use with sys.settrace """
     def __call__(self,frame,event,arg):
         pass
+    @property
+    def func_line_no(self):    return self.frame.f_lineno
+    lineno = func_line_no
+    line_no = func_line_no
+    line   = func_line_no
+
+    @property
+    def vals(self):
+        x = inspect.getargvalues(self.frame)
+        arguments = dict([ [arg, x.locals[arg]] for arg in  x.args ])
+        return arguments
+
+
+    @property
+    def caller_line_no(self):  return self.caller and self.caller.f_lineno
+    @property
+    def caller_filename(self): return self.caller and self.caller.f_code.co_filename
+    @property
+    def co(self):
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        return self.frame.f_code
+    @property
+    def locals(self): return frame.f_locals
+    @property
+    def func_filename(self): return self.co and os.path.abspath(self.co.co_filename)
+    @property
+    def caller(self): return self.frame.f_back
+
+    @property
+    def return_value(self):
+        """ only true if event==return """
+        return self.arg
+    @property
+    def func_name(self): return self.co.co_name
+
+    @property
+    def toplevel(self):  return not self.caller
 
 class CallTracer(Tracer):
+    """ """
 
     def __call__(self, frame, event, arg):
-        if event!='call': return
-        co            = frame.f_code
-        func_name     = co.co_name
-        func_filename = co.co_filename
-
-
-        if func_name == 'write': return
-        # Ignore write() calls from print statements
-
-        if func_name=='<module>': return self.handle_module(func_filename)
-
-        caller          = frame.f_back
-        toplevel        = not caller
-        shadow = locals(); shadow.pop('self')
-        if toplevel: self.handle_toplevel(**shadow)
+        """ """
+        self.frame = frame
+        self.event = event
+        self.arg   = arg
+        if self.event != 'call':
+            return
+        elif self.func_name == 'write':
+            # Ignore write() calls from print statements
+            return
+        elif self.func_name=='<module>':
+            return self.handle_module(self.func_filename)
+        elif self.toplevel:
+            return self.handle_toplevel()
         else:
-            return self.handle(frame, arg, caller, co, func_name, func_filename)
+            return self.handle()
 
-    def handle_module(self,fname):
+    def handle_toplevel(self):
+        """ called only for module-level "calls"..
+            the way the sys.settrace works is weird """
         pass
 
-
-    #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-"""
-
-import sys
-import functools
-
-def withlocals(f):
-    @functools.wraps(f)
-    def wrapper(*args, **kwds):
-        f_locals = {}
-        def probe(frame, event, arg):
-            if event == 'return':
-                f_locals.update(frame.f_locals)
-                return probe
-            sys.settrace(probe)
-            try: res = f(*args,**kwds)
-            finally: sys.settrace(None)
-            return (res, f_locals)
-    return wrapper
-
-# example
-
-@withlocals
-def foo(x, y=0, *args, **kwds):
-a = max(x,y)
-b = len(args)
-c = min(kwds.values())
-return a+b+c
-
-r,locs = foo(1,2,3,4,a=5,b=6)
-print locs
-"""
+    def handle_module(self, fname):
+        """ """
+        pass
