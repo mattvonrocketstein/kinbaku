@@ -62,7 +62,7 @@ class Snooper(CallTracer):
     def trace_lines(self, frame, event, arg):
         if event not in ['line','return']: return
         if event=='return':
-            return self.trace_return()
+            return self.trace_return(frame,event,arg)
         co = self.co #frame.f_code
         func_name = self.func_name #co.co_name
         line_no = self.line_no #frame.f_lineno
@@ -86,10 +86,13 @@ class Snooper(CallTracer):
         #            func=None)
         #self._record.append([filename,
 
-    def trace_return(self):
+    def trace_return(self, frame, event, arg):
         """ """
-        if is_atom(self.arg):
-            print console.red ('    -> atom: ') + console.color(str(self.arg))
+        self.frame=frame
+        self.event=event
+        self.arg=arg
+        if is_atom(arg):
+            print console.red ('    -> atom: ') + console.color(str(self.return_value))
             self.record()
         else:
             print console.blue('    -> composite: ') + console.color(str(self.arg))

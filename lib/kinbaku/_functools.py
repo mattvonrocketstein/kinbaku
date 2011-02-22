@@ -6,15 +6,16 @@ import inspect
 
 class Bag(object):
     """ a bag of named stuff """
+    def __repr__(self): return str(self)
     def __init__(self, **kargs):
         """ """
         [setattr(self,k,v) for k,v in kargs.items()]
+    def __str__(self):
+        return self.__class__.__name__ +"\n  "+ str(self.__dict__)
 
 class Fingerprint(Bag):
     """ """
-    def __str__(self):  return "F:"+str([self.func_name, self.func_filename])
-    def __repr__(self): return str(self)
-
+    #def __str__(self):  return "F:"+str([self.func_name, self.func_filename])
 
     def __equal__(self,other):
         """ """

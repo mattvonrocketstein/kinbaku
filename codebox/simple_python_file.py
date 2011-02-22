@@ -11,8 +11,6 @@
 
 """
 
-
-
 class Klass(object):
     """ docstring """
     def __init__(self):
@@ -24,6 +22,7 @@ class Klass(object):
 def f():
     a = 1
     return 32
+
 def g():
     return 4
 
