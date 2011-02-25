@@ -21,7 +21,7 @@ class console:
     def __getattr__(self,name):
         x = getattr(TermColors, name.title(),None)
         if x!=None:
-            def func(string,_print=False):
+            def func(string, _print=False):
                 z = x + string + TermColors.Normal
                 if _print:
                     print >> sys.stderr, z

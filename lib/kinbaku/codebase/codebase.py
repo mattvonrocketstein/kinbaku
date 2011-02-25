@@ -58,6 +58,7 @@ class CodeBase(CBContext, Sandbox, CBPlugin):
                     raise Exception, err.format(sh=path)
             return path
 
+        self.codex      = {} # Maps the shadow onto the real fs
         self.pth_root   = root
         self.pth_shadow = create_shadow(self)
         self.project    = Project(self.pth_shadow, **rope_project_options)
