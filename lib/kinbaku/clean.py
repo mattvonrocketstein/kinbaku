@@ -2,6 +2,7 @@
 """
 import sys
 from path import path
+import StringIO
 import tempfile
 
 from rope.refactor.importutils import ImportTools, importinfo, add_import
@@ -45,6 +46,7 @@ class Cleaner(KinbakuPlugin):
             print changes.new_contents.strip()
             #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         pass
+
     def organize_imports(self, itools, pymodule,
                          unused=True, duplicates=True,
                          selfs=True, sort=True, import_filter=None):
@@ -70,7 +72,7 @@ class Cleaner(KinbakuPlugin):
         """ copied from ropes importtools """
         module_imports = itools.module_imports(pymodule, import_filter)
         module_imports.sort_imports()
-        return module_imports#.get_changed_source()
+        return module_imports
 
     @publish_to_commandline
     def imports(self, fpath, inplace=False, changes=False):
@@ -78,6 +80,11 @@ class Cleaner(KinbakuPlugin):
             displaying result on stdout.  pass the --changes flag
             to see only the import lines and not the whole file.
         """
+        return self._imports(fpath, inplace=False,
+                             changes=False, stream=sys.stdout)
+
+    def _imports(self, fpath, inplace=False, changes=False, stream=StringIO.StringIO()):
+        """ """
         if fpath == '-': fpath = stdin2tmpfile(fpath)
         input_file_or_dir = path(fpath)
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
@@ -90,14 +97,16 @@ class Cleaner(KinbakuPlugin):
             results=self.organize_imports(itools, pymod, duplicates=False)
 
             results=results.get_changed_source()
+
             if changes:
-                print '\n'.join([line for line in results.split('\n') if line.startswith('from ') or line.startswith('import ')])
+                stream.write('\n'.join([line for line in results.split('\n') if line.startswith('from ') or line.startswith('import ')]))
             elif inplace:
                 fhandle = open(input_file_or_dir,'w')
                 fhandle.write(str(results))
-                print " + cleaned imports on ",input_file_or_dir
+                stream.write(" + cleaned imports on " + input_file_or_dir)
             else:
-                print results
+                stream.write(results)
+            return
 plugin = Cleaner
 
 if __name__=='__main__':

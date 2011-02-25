@@ -43,13 +43,15 @@ class Sandbox(object):
         """ codebase%fpath:
               mirrors a file and gets the absolute path to that file
         """
+
         return (self>>fpath).real_path
 
     def __lshift__(self,fpath):
         """ inverse of __getitem__, demirrors a fpath back into
             the original codebase.
         """
-        raise NotImplemented
+        #raise NotImplemented
+        return self.codex[fpath]
 
     def __rshift__(self,fpath):
         """ self>>fpath: mirrors a fpath into sandbox
@@ -58,22 +60,26 @@ class Sandbox(object):
               copy of the originating file each time..
         """
         if self.debug: report('mirroring "{fpath}" in sandbox', fpath=fpath.name)
+
         namebase = fpath.namebase
         try:
             mod = generate.create_module(self.project, namebase)
+
         except RopeError,e:
             if "already exists" in str(e):
                 ## Should not get here because we're wiping existing projects, right?
                 name_would_be = os.path.join(self.pth_shadow, fpath.name)
                 if os.path.exists(name_would_be):
                     remove_recursively(name_would_be)
-                    return self>>fpath
+                    return self >> fpath
                 else:
                     raise Exception,['wait, what?', str(e), name_would_be]
             else:
                 raise e
         else:
             mod.write(open(fpath).read())
+            #self.path2mod[mod.real_path] = mod
+            self.codex[mod.real_path] = str(fpath.abspath())
             return mod
 
     @classmethod

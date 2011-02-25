@@ -10,6 +10,7 @@
         codebox/simple_python_file.py:27: local variable 'x' is assigned to but never used
 
 """
+import os
 
 class Klass(object):
     """ docstring """

@@ -124,6 +124,7 @@ class Plugin(object):
         try:
             result = func(*args, **kargs) #kls.display_results(result)
         except TypeError,t:
+            raise t
             if func.func_name+'()' in str(t):
                 print " Usage: ",func2sig(func)[1]
                 sys.exit(1)

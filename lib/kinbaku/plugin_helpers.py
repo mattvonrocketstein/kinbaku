@@ -1,4 +1,8 @@
-""" plugin_helpers
+""" kinbaku.plugin_helpers
+
+    Helpers for plugin pattern
+
+    TODO: abstract this
 """
 
 import sys
