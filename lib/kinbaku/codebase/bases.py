@@ -1,18 +1,32 @@
 import os
 
 from path import path
+from tempfile import gettempdir
+
 from kinbaku.report import console, report
-from kinbaku.util import divider, remove_recursively
 from kinbaku.plugin import KinbakuPlugin
+from kinbaku.plugin import publish_to_commandline
+from kinbaku.util import divider, remove_recursively
 
 from rope.contrib import generate
 from rope.base.exceptions import RopeError
+from rope.refactor import restructure
 
-from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
+class RopeHelpers(object):
+    """ """
+    def restructure(self, pattern,goal, rules):
+        """ proxy to rope """
+        strukt  = restructure.Restructure(self.project, pattern, goal, rules)
+        return strukt
+
+    def get_changes(self,pattern, goal, rules):
+        """ proxy to rope """
+        return self.restructure(pattern, goal, rules).get_changes()
 
 class CBContext(object):
     """ CodeBase-Aspect azucar syntactico: contextmanager protocol """
     def __exit__(self, type, value, tb):
+        """ context manager protocol """
         if self.debug: console.draw_line(msg=" __exit__ ")
         if not any([type, value, tb]):
             if self.debug:
@@ -22,7 +36,7 @@ class CBContext(object):
             report("exit with error", type, value, tb)
 
     def __enter__(self):
-        """ """
+        """ context manager protocol """
         if self.debug:
             console.draw_line(msg="__enter__")
         return self
@@ -85,8 +99,7 @@ class Sandbox(object):
     @classmethod
     def shadow_container(kls):
         """ returns path to folder that will hold the shadows
-
-        HACK: Using ``/dev/shm/`` for faster tests
+            HACK: Using ``/dev/shm/`` for faster tests
         """
         if os.name == 'posix' and os.path.isdir('/dev/shm'):
             return '/dev/shm/'
