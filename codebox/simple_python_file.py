@@ -61,6 +61,8 @@ def a():
 function_f(); a()
 
 from kinbaku.snoopy import snoop
-function_f = snoop(function_f)
+#function_f = snoop(function_f)
 function_f() # calling f a second time
+function_g() # calling g the first time
+
 print 'fin: executing a simple python file'

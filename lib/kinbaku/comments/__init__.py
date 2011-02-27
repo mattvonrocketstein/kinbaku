@@ -2,7 +2,7 @@
 """
 
 from kinbaku.comments.plugin import CommentsExtractor
-from kinbaku.comments.tools import extract_docstrings,extract_comments
+
 plugin = CommentsExtractor
 
 if __name__=='__main__':

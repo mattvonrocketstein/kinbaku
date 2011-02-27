@@ -15,7 +15,10 @@ from kinbaku.util import report, is_python, groupby
 from kinbaku.codebase.bases import Sandbox, CBContext
 from kinbaku._types import UnusableCodeError
 from kinbaku.plugin import publish_to_commandline
+
 from kinbaku.codebase.cli import CBPlugin
+from kinbaku.codebase.search import Search
+from kinbaku.codebase.bases import RopeHelpers
 
 DEFAULT_WORKSPACE_NAME = 'kbk.workspace'
 USAGE                  = "codebase subparser usage "
@@ -26,9 +29,6 @@ def map_over_files(func):
         """ """
         return dict( [ [fpath, func(fpath)] for fpath in self.files(*args, **kargs) ] )
     return likefilelines
-
-from kinbaku.codebase.search import Search
-from kinbaku.codebase.bases import RopeHelpers
 
 class CodeBase(CBContext, Sandbox, CBPlugin, Search, RopeHelpers):
     """ a thin wrapper on rope.base.project for easily working with sandboxes """

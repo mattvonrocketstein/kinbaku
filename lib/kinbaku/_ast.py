@@ -1,8 +1,10 @@
 """ kinbaku._ast
 """
 node_has_lineno = lambda node: hasattr(node,'lineno')
+from pythoscope.store import code_of
 
-def walk(node, parent=None, lineage=[], test=None, results={},callback=None):
+def walk(node, parent=None, lineage=[],
+         test=None, results={}, callback=None):
     """ walker for ast rooted at <node> """
     if node is None: pass
     elif isinstance(node,(str,int,float,unicode)): pass#rint node
@@ -20,3 +22,6 @@ def walk(node, parent=None, lineage=[], test=None, results={},callback=None):
                    lineage=lineage+[parent],
                    callback=callback,
                    test=test) for child in children]
+
+if __name__=='__main__':
+    from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
