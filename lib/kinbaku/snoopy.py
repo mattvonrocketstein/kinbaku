@@ -25,9 +25,10 @@ class Snooper(CallTracer):
     """ Simple tracer for python code.. will be invoked only for
         functions that have been decorated with snoop()
     """
-    def __init__(self, names=[]):
+    def __init__(self, names=[],files=[]):
         self._record = []
-        self.names = names
+        self.files   = files
+        self.names   = names
 
     def is_snooped(self, func_name=None, func_filename=None, func=None):
         """ detects functions that have been marked for snooping """
@@ -36,6 +37,10 @@ class Snooper(CallTracer):
                                        func_filename=func_filename) in SNOOP_REGISTRY
         return confessed or have_fingerprint
 
+    def is_nearby(self, fname):
+        """ arbitrary measure of "closeness" """
+        return fname in self.files
+
     @property
     def watched(self):
         function_is_decorated = Fingerprint(func_name=self.func_name,
@@ -43,9 +48,13 @@ class Snooper(CallTracer):
                                             func_filename=self.func_filename) \
                                 in SNOOP_REGISTRY
 
-        return function_is_decorated or \
-               any([name in self.func_name for name in self.names])
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
+        out = function_is_decorated or \
+              ( self.is_nearby(self.func_filename) and any([name in self.func_name for name in self.names]))
+        if not out:
+            pass#rint "ignoring ",self.func_filename,self.func_name,self.is_nearby(self.func_filename)
+        return out
     def handle(self):
         """ called by CallTracer.__call__, this is the main
             event-responder entry for this tracer """
@@ -75,7 +84,7 @@ class Snooper(CallTracer):
         hdr = console.red('    ::  ')
         print hdr + msg
         return self.trace_lines
- 
+
     def trace_return(self, frame, event, arg):
         """ handler for return values """
         self.arg=arg
@@ -91,7 +100,9 @@ class Snooper(CallTracer):
 
     def record(self):
         """ """
-        from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        if self.is_class_definition:
+            print >>sys.stderr,"ignoring class def",self.func_name
         fprint = Fingerprint(func_name     = self.func_name,
                              func_filename = self.func_filename,
                              func_line_no  = self.func_line_no,

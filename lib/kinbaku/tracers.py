@@ -4,10 +4,10 @@
 import os
 import inspect
 
-class Tracer(object):
-    """ tracer for use with sys.settrace """
-    def __call__(self,frame,event,arg):
-        pass
+from pythoscope.tracer import is_class_definition
+
+class PythonFrame(object):
+    """ wrapper for python frame """
     @property
     def func_line_no(self):    return self.frame.f_lineno
     lineno = func_line_no
@@ -25,6 +25,7 @@ class Tracer(object):
     def caller_line_no(self):  return self.caller and self.caller.f_lineno
     @property
     def caller_filename(self): return self.caller and self.caller.f_code.co_filename
+
     @property
     def co(self):
         #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
@@ -46,6 +47,16 @@ class Tracer(object):
     @property
     def toplevel(self):  return not self.caller
 
+    @property
+    def is_class_definition(self):
+        return is_class_definition(self.frame)
+
+class Tracer(PythonFrame):
+    """ tracer for use with sys.settrace """
+
+    def __call__(self,frame,event,arg):
+        pass
+
 class CallTracer(Tracer):
     """ """
 
@@ -57,8 +68,7 @@ class CallTracer(Tracer):
         if self.event != 'call':
             return
         elif self.func_name == 'write':
-            # Ignore write() calls from print statements
-            return
+            return # Ignore write() calls from print statements
         elif self.func_name=='<module>':
             return self.handle_module(self.func_filename)
         elif self.toplevel:

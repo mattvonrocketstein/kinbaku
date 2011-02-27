@@ -14,9 +14,8 @@ from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.scope.cli import CLI
 
 from kinbaku.pygrep import pygrep
-test_prefix = 'test_'
 
-def name2testname(x): return test_prefix + x
+from pythoscope.generator import name2testname
 
 class Wrapper:
     """ Kinbaku wrapper for default pythoscope functionality

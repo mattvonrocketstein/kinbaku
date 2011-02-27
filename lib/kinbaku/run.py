@@ -1,6 +1,7 @@
 """ kinbaku.run
 """
 
+import os
 import sys
 import pprint
 import tempfile
@@ -17,24 +18,45 @@ from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
 from kinbaku._coverage import KinbakuFile, OLD_BANNER, convert, mine_cvg_output
 from kinbaku.snoopy import Snooper
 
+# :: str, [str,] --> [?]
+def trace_and_watch(fpath,watchlst=[], files=[]):
+    """ returns records after tracing file at fpath.
+        records only the return-values and call-arguments
+        for functions whose name match items in "watchlst"
+    """
+    if fpath not in files: files.append(path(fpath).abspath())
+    snoopy = Snooper(names=watchlst,files=files)
+    sys.settrace(snoopy);
+    execfile(fpath, dict(__name__='__main__'))
+    records = snoopy._record
+    return records
+
 class CLI(KinbakuPlugin):
     """ """
+
     @publish_to_commandline
-    def trace(self,fpath,names=''):
-        """ dynamically analyze programs IO traffic """
+    def trace(self, fpath, names='',):
+        """ dynamically analyze program IO traffic.
+              __main__ section will be invoked for @fpath,
+              functions not matching a name in @names will be ignored.
+        """
 
-        console.divider()
-        print console.red("executing:")
-        console.divider()
+        def sayhello():
+            hdr  = console.red("executing: ")
+            hdr += console.color(str(dict(watchlist=watchlst))).strip()
+            print '\n', console.blue(fpath)
+            console.divider(); print hdr; console.divider()
+        def saybye():
+            hdr  = console.red("recorded data: ")
+            hdr += console.color(str({"function calls":len(records)})).strip()
+            console.divider(); print hdr; console.divider()
+            pprint.pprint(records)
 
-        snoopy = Snooper(str2list(names))
-        sys.settrace(snoopy);
-        execfile(fpath, dict(__name__='__main__'))
+        watchlst = str2list(names) #files = str2list(files)
+        sayhello()
+        records = trace_and_watch(fpath, watchlst)
+        saybye()
 
-        console.divider()
-        print console.red("recorded data:")
-        console.divider()
-        pprint.pprint(snoopy._record)
 
     @publish_to_commandline
     def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
