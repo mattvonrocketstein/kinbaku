@@ -47,7 +47,7 @@ class Klass(object):
     def method(self):
         return os.path.exists
 
-def function_f():
+def function_f(arg1, karg1='defaultkarg'):
     a = 1
     return 32
 
@@ -58,11 +58,9 @@ def function_g():
 def a():
     def b(): x='in b()'
     x='in a()'; b()
-function_f(); a()
+function_f("third"); a()
 
 from kinbaku.snoopy import snoop
-#function_f = snoop(function_f)
-function_f() # calling f a second time
-function_g() # calling g the first time
-
+function_f(dict(a='b'),karg1='33')  # calling f a second time
+function_g()             # calling g the first time
 print 'fin: executing a simple python file'

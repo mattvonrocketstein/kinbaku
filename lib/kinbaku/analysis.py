@@ -28,6 +28,7 @@ def combine_word_summary(ws):
     return dict(__all__=dict([ [x, sum(y)] for x,y in _all ]))
 
 def count_lines(fpath):
+    """ """
     out = os.popen('wc -l "{fname}"'.format(fname=fpath))
     out = out.read().strip().split()[0]
     out = int(out)
@@ -45,11 +46,12 @@ def pylint(fpath):
 def get_comments(fpath):
     """ """
     import inspect
+    NotImplemented
     #getsource
     #[ commentopen(fpath).readlines() if line.strip.startswith('#') ]
 
-def word_summary(fpath,
-                 remove_list='is a none return else for import def if'.split()):
+REMOVE_LIST = 'is a none return else for import def if'.split()
+def word_summary(fpath, remove_list=REMOVE_LIST):
     """ returns dict(word=frequency) """
     from string import punctuation
     N = 10

@@ -11,7 +11,6 @@ from path import path
 from rope.refactor.importutils import ImportTools, importinfo, add_import
 from coverage.cmdline import main,CoverageScript
 
-from kinbaku._types import FileCoverage
 from kinbaku.report import console, report
 from kinbaku.codebase import plugin as CodeBase
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
@@ -56,6 +55,7 @@ class CLI(KinbakuPlugin):
         sayhello()
         records = trace_and_watch(fpath, watchlst)
         saybye()
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
 
     @publish_to_commandline

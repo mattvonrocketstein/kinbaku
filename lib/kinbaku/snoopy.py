@@ -1,6 +1,7 @@
 """ kinbaku.snoopy
 
     Tools for running and tracing python code
+    from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 """
 
 import os
@@ -23,9 +24,11 @@ def snoop(func):
 
 class Snooper(CallTracer):
     """ Simple tracer for python code.. will be invoked only for
-        functions that have been decorated with snoop()
+        functions that have been decorated with snoop(), or functions
+        that match patterns describes by "names"/"files"
     """
     def __init__(self, names=[],files=[]):
+        """ """
         self._record = []
         self.files   = files
         self.names   = names
@@ -43,12 +46,11 @@ class Snooper(CallTracer):
 
     @property
     def watched(self):
+        """ """
         function_is_decorated = Fingerprint(func_name=self.func_name,
                                             func_line_no=self.func_line_no,
                                             func_filename=self.func_filename) \
                                 in SNOOP_REGISTRY
-
-        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
         out = function_is_decorated or \
               ( self.is_nearby(self.func_filename) and any([name in self.func_name for name in self.names]))
@@ -58,7 +60,6 @@ class Snooper(CallTracer):
     def handle(self):
         """ called by CallTracer.__call__, this is the main
             event-responder entry for this tracer """
-        #func_line_no    = frame.f_lineno
         if not self.watched: return
         else:
             msg = '  In function: "{fname}"\n    {cline}:{cfile} ---> {fline}:{fpath}'
@@ -71,7 +72,7 @@ class Snooper(CallTracer):
             return self.trace_lines
 
     def trace_lines(self, frame, event, arg):
-        """ """
+        """ called for line return/line events """
         self.frame=frame; self.event=event;self.arg=arg
         if event not in ['line','return']: return
         if event=='return':
@@ -86,7 +87,7 @@ class Snooper(CallTracer):
         return self.trace_lines
 
     def trace_return(self, frame, event, arg):
-        """ handler for return values """
+        """ called for return events """
         self.arg=arg
         self.frame=frame;
         self.event=event;
@@ -100,7 +101,6 @@ class Snooper(CallTracer):
 
     def record(self):
         """ """
-        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         if self.is_class_definition:
             print >>sys.stderr,"ignoring class def",self.func_name
         fprint = Fingerprint(func_name     = self.func_name,

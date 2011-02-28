@@ -1,68 +1,30 @@
 """ kinbaku.types
 """
 import os
+import compiler
+
 from kinbaku.report import console, report
-from kinbaku._coverage import FileCoverage
-
-
-import pep362
-from pep362 import Signature as JohnHancock
-class Signature(JohnHancock):
-    def __len__(self):
-        return len(self._parameters)
-
-    @property
-    def has_default_values(self):
-        return any([hasattr(p,'default_value') for p in self._parameters.values()])
-
-    @property
-    def default_values(self):
-        items = [[k,v] for k,v in self._parameters.items() if hasattr(v,'default_value')]
-        return dict([[k, v.default_value] for k,v in items])
-pep362.Signature=Signature # TODO: find a way around this monkey patch
-
+from kinbaku.python.signatures import Signature
+from kinbaku.python import Comment
+from kinbaku.python import is_atom
 
 class UnusableCodeError(ValueError): pass
+class BadDotPath(ValueError):        pass
 
-class Comment(object):
-    def rparent(self): pass
-
-    def rowner(self):
-        """ render owner """
-        if isinstance(self.owner,str): return self.owner
-        p  = self.owner.parent or ''
-        pp = p and p.parent or ''
-        ppp = pp and pp.parent or ''
-        p = p and p[0].tagname
-        pp = pp and pp[0].tagname
-        ppp = ppp and ppp[0].tagname
-        def fmt(x):
-            if not x: return
-            if isinstance(x,str):
-                return x,x
-            return x.tagname, str(x[0].astext()).strip()
-        # eg: [('class_section', 'CBPlugin'), ('method_section', 'files')]
-        tmp = [fmt(self.owner.parent), fmt(self.owner),]
-        tmp = filter(None,tmp)
-        tmp = [tpl[1] for tpl in tmp]
-        tmp= '.'.join(tmp)
-        return tmp
-
+class Bag(object):
+    """ a bag of named stuff """
+    def __repr__(self): return str(self)
+    def __init__(self, **kargs):
+        """ """
+        [ setattr(self, k, v) for k,v in kargs.items() ]
 
     def __str__(self):
-        dox = console.color(self.text).rstrip()
-        return '{lineno}:\t{dox}'.format(lineno=self.lineno,
-                                          dox=dox, )
-    def display(self):
-        print str(self)
+        return self.__class__.__name__ +"\n  "+ str(self.__dict__)
 
-    def __init__(self,lineno=-1, text='', full_line=False,owner='??'):
-        self.owner     = owner
-        self.lineno    = int(lineno)
-        self.text      = text
-        self.full_line = full_line
+
 
 class Match(object):
+    """ generic representation of a match """
     def __str__(self):
         return 'Match_'+str(self.__dict__)
 
@@ -71,11 +33,44 @@ class Match(object):
     def __init__(self, **kargs):
         for k,v in kargs.items(): setattr(self,k,v)
 
-def is_atom(arg):
-    """ an argument is an atom iff it is
-        equal to the evaluation of it's
-        representation """
-    try:
-        return arg==eval(repr(arg))
-    except SyntaxError:
-        return False
+class KinbakuFile(object):
+    """ Convenience for wrapping files
+    """
+    def __init__(self,fname=None,fhandle=None):
+        self.fname = fname
+        self._fhandle=fhandle
+
+    @property
+    def fhandle(self):
+        return self._fhandle or open(self.fname,'r')
+
+    @property
+    def contents(self):
+        return self.fhandle.read()
+
+    @property
+    def ast(self):
+        try:
+            return compiler.parse(self.contents)
+        except IOError:
+            print console.red("IOError: {f}".format(f=str(self.fname)))
+            return
+
+    def parse(self): return self.ast
+
+    def run_cvg(self):
+        """ """
+        fhandle     = StringIO.StringIO("")
+        report_args = dict( ignore_errors = False, omit = '',
+                            include = '', morfs = [],
+                            file = fhandle, )
+
+        cscript = CoverageScript()
+        status  = cscript.command_line(['run', self.fname])
+        if status == 0:
+            cscript.coverage.report(show_missing=True, **report_args)
+            fhandle.seek(0);
+            results = fhandle.read()
+            return results
+        else:
+            raise Exception,['not sure what to do with cvg status:',status]
