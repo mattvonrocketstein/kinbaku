@@ -12,6 +12,7 @@ from sourcecodegen.generation import ModuleSourceCodeGenerator
 
 from kinbaku.report import console
 from kinbaku._ast import node_has_lineno,walk
+from kinbaku._types import KinbakuFile
 
 OLD_BANNER = '----------------------------------------------------------------------------------'
 
@@ -25,11 +26,11 @@ def convert(x):
 
 def mine_cvg_output(line):
     """ """
-    cvg_output_line = line.split()
+    cvg_output_line   = line.split()
     miss,  cover      = cvg_output_line[2],cvg_output_line[3]
     fname, statements = cvg_output_line[0],cvg_output_line[1]
-    linenos   = ''.join(cvg_output_line[4:]).split(',')
-    linenos   = map(convert, linenos)
+    linenos           = ''.join(cvg_output_line[4:]).split(',')
+    linenos           = map(convert, linenos)
 
     # NOTE: cuts off the "missed lines" bit, it's stored in "linenos"
     original_line = line.split('%')[0]+'%'
@@ -39,39 +40,6 @@ def mine_cvg_output(line):
         fname += '.py'
 
     return fname, miss,cover,linenos,original_line,statements
-
-class KinbakuFile(object):
-    @property
-    def contents(self):
-        return open(self.fname,'r').read()
-
-    @property
-    def ast(self):
-        try:
-            return compiler.parse(self.contents)
-        except IOError:
-            print console.red("IOError: {f}".format(f=str(self.fname)))
-            return
-
-    def __init__(self,fname=None):
-        self.fname = fname
-
-    def run_cvg(self):
-        """ """
-        fhandle     = StringIO.StringIO("")
-        report_args = dict( ignore_errors = False, omit = '',
-                            include = '', morfs = [],
-                            file = fhandle, )
-
-        cscript = CoverageScript()
-        status  = cscript.command_line(['run', self.fname])
-        if status == 0:
-            cscript.coverage.report(show_missing=True, **report_args)
-            fhandle.seek(0);
-            results = fhandle.read()
-            return results
-        else:
-            raise Exception,['not sure what to do with cvg status:',status]
 
 class FileCoverage(KinbakuFile):
     """ tracks coverage metadata for a specific file """
@@ -89,7 +57,7 @@ class FileCoverage(KinbakuFile):
 
     def lines_missing_from_coverage(self):
         """ returns [lineno,line] for lines that lack coverage """
-        def tree2src(node,parent,lineage):
+        def tree2src(node, parent, lineage):
             try:
                 return generate_code(parent).strip()
             except Exception,e:
@@ -112,7 +80,8 @@ class FileCoverage(KinbakuFile):
         return out
 
     def objects_missing_from_coverage(self):
-        """ returns [lineno,line] for lines that lack coverage """
+        """ experimental: show objects instead of lineno's
+            returns [lineno, line] for lines that lack coverage """
 
         def tree2src(node, parent, lineage):
             """ convert node/parent/lineage to src-code  """

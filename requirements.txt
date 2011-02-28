@@ -1,4 +1,3 @@
-sourcecodegen
 docutils
 path.py
 pygments
@@ -8,4 +7,5 @@ pylint
 pep8
 pep362
 pythoscope
+git+git://github.com/mattvonrocketstein/sourcecodegen.git#egg=sourcecodegen
 git+git://github.com/mattvonrocketstein/multimethods-py.git#egg=multimethods
