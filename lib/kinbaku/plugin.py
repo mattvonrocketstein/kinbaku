@@ -43,6 +43,7 @@ def get_path_from_config():
 
 class Plugin(object):
     """ Abstract Plugin """
+    _parse_main = ''
 
     def prepare_sig(self, func, modname):
         """ prepare a legible, context-senstive signature from func """
