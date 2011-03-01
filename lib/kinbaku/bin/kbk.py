@@ -75,7 +75,7 @@ def show_all_plugins():
         plugin_obj.help(indent=3)
 
 
-def handle_main_argument(args, options, main=''):
+def handle_main_argument(options, args, main='',lvl=1):
     """ get a subparser and dispatch """
 
     ## Just subcomand name or "help"
@@ -87,6 +87,8 @@ def handle_main_argument(args, options, main=''):
         try: main = args[0]
         except IndexError:
             show_all_plugins(); sys.exit()
+        else:
+            args  = args[1:] # cut off plugin name
 
     if main=='help':
         show_all_plugins(); sys.exit()
@@ -104,24 +106,21 @@ def handle_main_argument(args, options, main=''):
             reporpt('Code not retrieve "plugin" from {mod}',mod=plugin_mod)
             sys.exit()
         plugin_obj = plugin.spawn()
-        args  = args[1:] # cut off plugin name
+
         args  = filter(lambda x: not x.startswith('--'),args)
-        plugin_obj.parse_args(args, options)
+        plugin_obj.parse_args(args, options,main=main)
+
+def PARSER():
+    p               = parser()
+    return p.parse_args()
 
 def entry():
     """ Main entry point
         NOTE: takes no arguments without defaults.. """
-    #if "--help" in sys.argv:
-    #    show_all_plugins(); sys.exit()
-    #else:
-    p               = parser()
-    (options, args) = p.parse_args()
-    handle_main_argument(args, options)
+    handle_main_argument(*PARSER())
 
-def comments():
-    p               = parser()
-    (options, args) = p.parse_args()
-    handle_main_argument(args, options,'comments')
+def comments(): handle_main_argument(*(list(PARSER())+['comments']))
+def scope(): handle_main_argument(*(list(PARSER())+['scope']))
 
 if __name__=='__main__':
     entry()

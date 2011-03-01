@@ -30,7 +30,8 @@ if have_setuptools:
     add_keywords = dict( entry_points = \
                          { 'console_scripts': \
                            ['kinbaku = kinbaku.bin.kbk:entry', \
-                            'kbk-comments = kinbaku.bin.kbk:comments'], \
+                            'kbk-comments = kinbaku.bin.kbk:comments', \
+                            'kbk-scope = kinbaku.bin.kbk:scope'], \
                          }, )
 else:
     add_keywords = dict( scripts = ['kinbaku'], )
