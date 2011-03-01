@@ -3,14 +3,12 @@
 """
 import copy, sys
 
+from optparse import OptionParser
 from pep362 import signature
 from path import path
 
-from kinbaku.util import _import
-from kinbaku.util import report, is_python, groupby
-from kinbaku.util import divider, remove_recursively
-from kinbaku.report import report,console
 def fpath2namespace(fpath):
+    """ """
     namespace  = fpath.namebase
     if namespace == '__init__':
         namespace = fpath.dirname().namebase
@@ -18,19 +16,14 @@ def fpath2namespace(fpath):
 
 def parser():
     """ builds the parser object """
-    from optparse import OptionParser
     class Parser(OptionParser):
         def error(self, msg):
             pass
-
     parser = Parser()
-    #parser.add_option("-f", "--file", dest="filename", help="use FILE", metavar="FILE")
-    #parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=True, help="don't print status messages to stdout")
-    #parser.add_option("-s", "--search", dest="search", default=True, help="..")
-    #parser.add_option("-p", "--path", dest="path",  default='', help="..")
+
     return parser
 
-def announce_discovery(fpath,plugin_obj):
+def announce_discovery(fpath, plugin_obj):
     """ placeholder """
     # print "\tfound plugin",fpath,plugin_obj, plugin_obj.__class__.__bases__
     pass
@@ -62,6 +55,7 @@ def plugin_search_results():
 def show_all_plugins():
     """ displays all plugins and their
         options in an easy to read menu """
+    from kinbaku.report import report,console
     matches = plugin_search_results()
     #print "\n Help for sub-commands:\n"
     for match in matches:
@@ -81,17 +75,21 @@ def show_all_plugins():
         plugin_obj.help(indent=3)
 
 
-def handle_main_argument(args, options):
+def handle_main_argument(args, options, main=''):
     """ get a subparser and dispatch """
 
     ## Just subcomand name or "help"
-    try: main = args[0]
-    except IndexError:
-        show_all_plugins(); sys.exit()
-    else:
-        if main=='help':
+    from kinbaku.util import _import
+    from kinbaku.util import report, is_python, groupby
+    from kinbaku.util import divider, remove_recursively
+
+    if not main:
+        try: main = args[0]
+        except IndexError:
             show_all_plugins(); sys.exit()
 
+    if main=='help':
+        show_all_plugins(); sys.exit()
 
     try:
         import_line = 'kinbaku.{plugin}'.format(plugin=main)
@@ -111,13 +109,19 @@ def handle_main_argument(args, options):
         plugin_obj.parse_args(args, options)
 
 def entry():
-    """ """
-    if "--help" in sys.argv:
-        show_all_plugins(); sys.exit()
-    else:
-        p=parser()
-        (options, args) = p.parse_args()
-        handle_main_argument(args, options)
+    """ Main entry point
+        NOTE: takes no arguments without defaults.. """
+    #if "--help" in sys.argv:
+    #    show_all_plugins(); sys.exit()
+    #else:
+    p               = parser()
+    (options, args) = p.parse_args()
+    handle_main_argument(args, options)
+
+def comments():
+    p               = parser()
+    (options, args) = p.parse_args()
+    handle_main_argument(args, options,'comments')
 
 if __name__=='__main__':
     entry()
