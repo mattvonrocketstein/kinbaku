@@ -89,7 +89,6 @@ class Pythoscope(CLI, Wrapper):
         if bname in _map:
             return _map.get(bname)
 
-    @property
     def map(self):
         """ return a map of codebase-files --> generated-test-files
             NOTE: this function is useless before self.make_tests() is called
@@ -104,7 +103,7 @@ class Pythoscope(CLI, Wrapper):
             and returns the contents of the test-file.  returns
             None if it can't map "other" to a testfile.
         """
-        out = self.map.get(path(other).abspath(), None)
+        out = self.map().get(path(other).abspath(), None)
         return out and open(out).read()
 
     def _generate(self, input_file_or_dir, imports=True, codebase=None):
@@ -123,7 +122,7 @@ class Pythoscope(CLI, Wrapper):
 
         self.init_pyscope(container)
         self.make_tests()
-        _map = self.map
+        _map = self.map()
         one_argument = len(_map)==1
         _map = ( [fname, tname, self>>fname] for fname,tname in _map.items() )
 
