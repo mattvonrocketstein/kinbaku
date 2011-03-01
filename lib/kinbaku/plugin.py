@@ -22,14 +22,6 @@ from kinbaku.plugin_helpers import options2dictionary
 
 from kinbaku.report import report, console
 
-def prepare_sig(func, modname):
-    """ prepare a legible, context-senstive signature from func """
-    progname   = os.path.split(sys.argv[0])[1]
-    sig_obj, sig_str = func2sig(func)
-    car =  "{kinbaku} ".format(kinbaku = progname)
-    cdr = '{plugin} {S}'.format(S=sig_str,plugin = modname, )
-    return car+cdr
-
 def publish_to_commandline(func):
     """ decorator for plugin methods """
     func.is_published_to_commandline = True
@@ -51,9 +43,24 @@ def get_path_from_config():
 
 class Plugin(object):
     """ Abstract Plugin """
+
+    def prepare_sig(self, func, modname):
+        """ prepare a legible, context-senstive signature from func """
+        progname   = os.path.split(sys.argv[0])[1]
+        sig_obj, sig_str = func2sig(func)
+        car =  "{kinbaku} ".format(kinbaku = progname)
+        if self._parse_main.strip()==modname.strip():
+            plugin=''
+        else:
+            plugin=modname
+        cdr = '{plugin} {S}'.format(S=sig_str, plugin = plugin )
+        return car+cdr
+
     @classmethod
-    def parse_args(kls, args, options):
-        """ receives cascaded args/options """
+    def parse_args(kls, args, options, main=''):
+        """ receives cascaded args/options
+        """
+        kls._parse_main = main
         try: interface_name = args[0]
         except IndexError: ## Not even a function name
             panic(kls)
@@ -121,13 +128,13 @@ class Plugin(object):
             sys.exit()
 
         #print args,kargs
-        try:
-            result = func(*args, **kargs) #kls.display_results(result)
-        except TypeError,t:
-            raise t
-            if func.func_name+'()' in str(t):
-                print " Usage: ",func2sig(func)[1]
-                sys.exit(1)
+        #try:
+        result = func(*args, **kargs) #kls.display_results(result)
+        #except TypeError,t:
+        #    raise t
+        #    if func.func_name+'()' in str(t):
+        #        print " Usage: ",func2sig(func)[1]
+        #        sys.exit(1)
 
     def get_subcommands(self):
         """ """
@@ -150,7 +157,7 @@ class Plugin(object):
             doc        = func.__doc__
             parent     = self.__class__.__name__.lower()
 
-            _ex = console.blue(prepare_sig(func,modname))
+            _ex = console.blue(self.prepare_sig(func, modname))
 
             if doc: dox =  filter(None, [x.strip() for x in doc.split('\n')] )
             else:   dox = [ "No documentation yet." ]

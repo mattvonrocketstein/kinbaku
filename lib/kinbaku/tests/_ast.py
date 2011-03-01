@@ -4,6 +4,7 @@
 """
 
 import unittest
+import sourcecodegen
 from kinbaku._ast import dotpath2ast
 """
 class TestNodeHasLineno(unittest.TestCase):
@@ -45,8 +46,10 @@ class TestDotpath2ast(unittest.TestCase):
         self.assertTrue(len(result))
 
     def test_dotpath2ast_3(self):
-        """ functions inside classes are still found  """
-        result,_ = dotpath2ast("class CLASS:\n def FUNCTION(self, a,b): return 3", 'CLASS.FUNCTION')
+        """ functions inside classes should still be found  """
+        print sourcecodegen.__version__
+        result,_ = dotpath2ast("class CLASS:\n def FUNCTION(self, a,b):\n 'testing'\n  return 3", 'CLASS.FUNCTION')
+        print result
         self.assertTrue(isinstance(result,str))
         self.assertTrue(len(result))
 
