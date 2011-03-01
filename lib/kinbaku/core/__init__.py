@@ -1,6 +1,8 @@
 """ kinbaku.core
 """
 
+import compiler
+
 class KinbakuFile(object):
     """ Convenience for wrapping files
     """

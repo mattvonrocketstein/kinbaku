@@ -3,6 +3,7 @@
       Pythoscope plugin
 
 """
+import textwrap
 import sys
 import json
 import os
@@ -14,10 +15,12 @@ from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.scope.cli import CLI
 from kinbaku.util import remove_recursively
 from kinbaku.pygrep import pygrep
-
+from kinbaku.core import KinbakuFile
 from pythoscope.generator import name2testname
+from sourcecodegen.visitor import CodeStream
 
 TEST_PREFIX = name2testname(' ').strip()
+INDENTION   = CodeStream().indentation_string
 
 class Wrapper:
     """ Kinbaku wrapper for default pythoscope functionality
@@ -157,13 +160,71 @@ class Pythoscope(CLI, Wrapper):
             for fname,tname,generated_test in results:
                 print generated_test
 
+    def __getitem__(self, slyce):
+        """ self[fname:func_name] --> src_code for corresponding test function
+        """
+        from pythoscope.generator import find_method_code
+        from pythoscope.astbuilder import parse
+        if not isinstance(slyce,slice):
+            raise Exception,NotImplementedYet
+        x,y,z = slyce.start,slyce.stop,slyce.step
+        if y:
+            return find_method_code(parse(self>>x), y)
+        elif z:
+            return find_method_code(parse(open(x).read()), z)
+        raise Exception,NotImplementedYet
 
     def originals(self, results):
         """ original function implementation
             in test-function docstrings """
-        for fname, tname, generated_test in results:
-            newtest = generated_test #pygrep(fname,"imports",raw_text=True) + generated_test
-            yield fname, tname, newtest
+        import sourcecodegen
+        from kinbaku._ast import walkfunctions
+
+        def cbf(fname):
+            """ callback factory """
+            results = []
+            def callback(node, parent, lineage):
+                #raise Exception,node.doc
+                print 'setting', fname, node.name
+                original_code = self[fname::node.name[len(TEST_PREFIX):]]
+                original_code = str(original_code)
+                original_code = original_code#.lstrip().strip()
+                original_code = [x for x in original_code.split('\n')]
+                original_code = ['Original implementation:\n'] + original_code
+                original_code = ('\n'+INDENTION*2).join(original_code)
+                node.doc = str(original_code)
+                results.append( [node.name, sourcecodegen.generation.generate_code(node)])
+            return callback, results
+
+        for fname, tfname, generated_test in results:
+            cb1, results1 = cbf(fname)
+            rrrr, root = walkfunctions(open(tfname).read(), cb1)
+            #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+            yield fname,None, sourcecodegen.generate_code(root)
+            #raise Exception,sourcecodegen.generate_code(root)
+            #for func_name, func_code in results1:
+            #    test_code = self[fname:TEST_PREFIX+func_name]
+
+                #o_code    = self[fname::func_name]
+
+                #code_obj  = compiler.compile(o_code.strip().lstrip(),fname,'exec')
+                #ast       = compiler.parse(o_code.strip().lstrip(),'exec')
+                #new_src   = sourcecodegen(ast)
+                #test_code =
+                #magic = str(self[fname:TEST_PREFIX+func_name])
+                #
+                #raise Exception, [fname, func_name, ]
+            #raise Exception,noresults
+            #yield fname,tname,''
+            #newtest = generated_test #pygrep(fname,"imports",raw_text=True) + generated_test
+            #shadow_scope = {}
+            #ast = compiler.parse(exec(newtest,shadow_scope))
+            #import ast
+            #kbkfile = KinbakuFile(tname)
+            #yield fname, tname, str(find_method_code(kbkfile.ast,'test_function_f'))#str(dir(shadow_scope))
+            #raise Exception, str(find_method_code(parse(generated_test),'test_function_f'))#str(dir(shadow_scope))
+            #raise Exception, self[fname:TEST_PREFIX+'function_f']
+
 
     def imports(self, results):
         """ copy imports from original file into test case """
@@ -175,22 +236,7 @@ class Pythoscope(CLI, Wrapper):
                                      gtest=generated_test)
             yield fname,tname, newtest
 
-
-    def sam(self):
-        # If there's only file, display it to stdout
-        codebase_files = codebase.files()
-        for i in range(len(codebase_files)):
-            _file = self.tests_files[i]
-            if imports_per_file:
-                msg = '""" {P}\n\n      tests for {fname} \n"""'
-                print msg.format(P=path(_file).namebase, fname=input_file_or_dir)
-                print imports_per_file.values()[0]
-            if originals:
-                pass
-            print open(_file).read()
-
-
-    def __init__(self, fpath=None):
-        pass #self.fpath=fpath or self.default_fpath
+    #def __init__(self, fpath=None):
+    #    pass #self.fpath=fpath or self.default_fpath
 
 plugin = Pythoscope
