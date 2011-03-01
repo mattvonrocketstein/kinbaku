@@ -12,7 +12,7 @@ from sourcecodegen.generation import ModuleSourceCodeGenerator
 
 from kinbaku.report import console
 from kinbaku._ast import node_has_lineno,walk
-from kinbaku._types import KinbakuFile
+from kinbaku.core import KinbakuFile
 
 OLD_BANNER = '----------------------------------------------------------------------------------'
 
