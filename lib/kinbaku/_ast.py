@@ -6,7 +6,7 @@ from StringIO import StringIO
 import sourcecodegen
 
 from kinbaku._types import BadDotPath
-from kinbaku._types import KinbakuFile
+from kinbaku.core import KinbakuFile
 
 node_has_lineno  = lambda node: hasattr(node,'lineno')
 node_is_function = lambda node: isinstance(node,compiler.ast.Function)
