@@ -6,18 +6,19 @@ from StringIO import StringIO
 from kinbaku.clean import Cleaner
 
 class pygrep(object):
+    """ """
+
     def imports(self, fpath, raw_text):
-
-        # HACK: uses ropes' import cleaning refactor
-        #       returns a string consisting of only import lines
-
-        z = StringIO()
-        Cleaner()._imports(fpath, inplace=False, changes=True, stream=z)
+        """ HACK: uses ropes' import cleaning refactor returns
+                  a string consisting of only import lines
+        """
+        result = StringIO()
+        Cleaner()._imports(fpath, inplace=False, changes=True, stream=result)
         if raw_text:
-            z.seek(0);
-            return z.read()
+            result.seek(0);
+            return result.read()
         else:
-            return z
+            return result
 
     def __call__(self, fpath, instruction, raw_text=False):
         """ """

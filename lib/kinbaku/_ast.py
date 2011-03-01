@@ -60,6 +60,14 @@ def walk(node, parent=None, lineage=[],
             if any(out):
                 return filter(None, [x for x in out if x])[0]
 
+def walkfunctions(src_code, callback):
+    """ static analysis: walk callback over all functions """
+    result = None
+    kbk_f  = KinbakuFile(fhandle=src2stringio(src_code))
+    root   = kbk_f.ast
+    return walk(root, test=node_is_function, callback=callback, ),root
+
+
 def dotpath2ast(src_code, dotpath):
     """ static analysis: convert dotpath to python ast """
     odotpath = dotpath
