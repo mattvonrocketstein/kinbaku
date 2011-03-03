@@ -119,8 +119,11 @@ def entry():
         NOTE: takes no arguments without defaults.. """
     handle_main_argument(*PARSER())
 
-def comments(): handle_main_argument(*(list(PARSER())+['comments']))
-def scope(): handle_main_argument(*(list(PARSER())+['scope']))
+def manufacture_shortcut(name ):
+    return lambda: handle_main_argument(*(list(PARSER())+[name]))
+comments=manufacture_shortcut('comments')
+scope = manufacture_shortcut('scope')
+#def scope():    handle_main_argument(*(list(PARSER())+['scope']))
 
 if __name__=='__main__':
     entry()

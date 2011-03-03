@@ -11,6 +11,7 @@ from path import path
 from rope.refactor.importutils import ImportTools, importinfo, add_import
 from coverage.cmdline import main,CoverageScript
 
+from kinbaku._coverage import FileCoverage #KinbakuFile
 from kinbaku.report import console, report
 from kinbaku.codebase import plugin as CodeBase
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
@@ -71,7 +72,7 @@ class CLI(KinbakuPlugin):
         print ' {hdr}\n{div}'.format(hdr=header,div=console.divider(display=False))
         for fpath_coverage in results:
             print ' ',  fpath_coverage.original_line
-            if objects:
+            if containers:
                 self.handle_objects(fpath_coverage)
             elif lines:
                 self.handle_lines(fpath_coverage)

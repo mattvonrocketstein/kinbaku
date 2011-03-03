@@ -6,9 +6,10 @@ import os
 import StringIO
 
 import compiler, ast
-from coverage.cmdline import main,CoverageScript
+from coverage.cmdline import main, CoverageScript
 from sourcecodegen.generation import generate_code
 from sourcecodegen.generation import ModuleSourceCodeGenerator
+#from sourcecodegen.generation import ModuleSourceCodeGenerator
 
 from kinbaku.report import console
 from kinbaku._ast import node_has_lineno,walk
@@ -39,7 +40,7 @@ def mine_cvg_output(line):
     if not os.path.exists(fname) and not fname.endswith('.py'):
         fname += '.py'
 
-    return fname, miss,cover,linenos,original_line,statements
+    return fname, miss, cover, linenos, original_line,statements
 
 class FileCoverage(KinbakuFile):
     """ tracks coverage metadata for a specific file """
