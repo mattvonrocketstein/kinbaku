@@ -17,7 +17,7 @@ from kinbaku.util import remove_recursively
 from kinbaku.pygrep import pygrep
 from kinbaku.core import KinbakuFile
 from pythoscope.generator import name2testname
-#from kinbaku._sourcecodegen import CodeStream
+from kinbaku.python._module import PythonModule
 from kinbaku._sourcecodegen import INDENTION
 
 TEST_PREFIX = name2testname(' ').strip()
@@ -31,6 +31,18 @@ class Algebra:
         codebasefiles = [ codebasefile.abspath() for codebasefile in self.codebase.files() ]
         codebasefiles = [ [codebasefile, self+codebasefile] for codebasefile in codebasefiles]
         return dict(codebasefiles)
+
+    def __add__(self, other):
+        """ converts to-be-tested-file in the real world
+            into the corresponding generated-test-file
+            in the shadow world
+        """
+        assert isinstance(other,str), str(NotImplementedYet)
+        _map  = [ [path(tf).basename()[len(TEST_PREFIX):], path(tf).abspath()] for tf in self.tests_files ]
+        _map  = dict(_map)
+        bname = path(other).basename()
+        if bname in _map:
+            return _map.get(bname)
 
     def __rshift__(self, fpath):
         """ operator to get src code for fpath:
@@ -73,11 +85,8 @@ class Algebra:
         out = [ x(line) for line in out]
         return '\n'.join(out)
 
-class Wrapper(Algebra):
-    """ Kinbaku wrapper for default pythoscope functionality
-        adds features like file header, copying all imports,
-        and better dynamic analysis.
-    """
+class Glue:
+    """ """
     tests_folder = lambda self: self.codebase and path(self.codebase.pth_shadow) + path('/tests')
     tests_folder = property(tests_folder)
 
@@ -97,6 +106,12 @@ class Wrapper(Algebra):
             return []
     test_files = tests_files
 
+
+class Wrapper(Glue, Algebra):
+    """ Kinbaku wrapper for default pythoscope functionality
+        adds features like file header, copying all imports,
+        and better dynamic analysis.
+    """
     def make_tests(self):
         """ self.tests_files[0].startswith(self.codebase.project.address)
             self.tests_files[0][len(self.codebase.project.address):]
@@ -128,20 +143,7 @@ class Pythoscope(CLI, Wrapper):
     def spawn(kls, **kargs):
         return Pythoscope()
 
-
-    def __add__(self, other):
-        """ converts to-be-tested-file in the real world
-            into the corresponding generated-test-file
-            in the shadow world
-        """
-        assert isinstance(other,str), str(NotImplementedYet)
-        _map  = [ [path(tf).basename()[len(TEST_PREFIX):], path(tf).abspath()] for tf in self.tests_files ]
-        _map  = dict(_map)
-        bname = path(other).basename()
-        if bname in _map:
-            return _map.get(bname)
-
-    def _generate(self, input_file_or_dir, imports=True, codebase=None):
+    def _generate(self, input_file_or_dir, codebase=None):
         """ from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         """
         if not path(input_file_or_dir).isfile():
@@ -159,12 +161,14 @@ class Pythoscope(CLI, Wrapper):
         self.make_tests()
         _map = self.map()
         one_argument = len(_map)==1
-        _map = ( [fname, tname, self>>fname] for fname,tname in _map.items() )
+        #_map = ( [fname, tname, self>>fname] for fname,tname in _map.items() )
+        for fname,tname in _map.items():
+            yield fname, tname, self>>fname
 
-        if one_argument:
-            return _map #self >> _map.next()[0]
-        else:
-            raise Exception,'not supportd yet'
+        #if one_argument:
+        #    return _map #self >> _map.next()[0]
+        #else:
+        #    raise Exception,'not supportd yet'
             #for fname,generated_test in _map:
             #    console.blue(fname); console.divider()
             #    print generated_test
@@ -177,21 +181,27 @@ class Pythoscope(CLI, Wrapper):
         """
 
         from kinbaku.codebase import plugin as CodeBase
-        postprocessors = []
-        if imports: postprocessors.append(self.imports)
-        if originals: postprocessors.append(self.originals)
+        #postprocessors = []
+        #if imports:
+        #    postprocessors.append(self.imports)
+        #if originals:
+        #    postprocessors.append(self.originals)
+
         with CodeBase(input_file_or_dir, gloves_off=True, workspace=None) as codebase:
+
             if not codebase.python_files:
                 report('No files')
                 sys.exit(1)
 
             self.codebase = codebase
-            results = self._generate(input_file_or_dir,imports=imports,codebase=codebase)
+            results = self._generate(input_file_or_dir,
+                                     codebase=codebase)
 
-            for postprocessor in postprocessors:
-                results = postprocessor(results)
+            results = self.originals( [x for x in results] )
+            results = self.imports( [x for x in results] )
 
-            for fname,tname,generated_test in results:
+
+            for fname, tname, generated_test in results:
                 print generated_test
 
 
@@ -203,7 +213,6 @@ class Pythoscope(CLI, Wrapper):
         def cbf(fname):
             """ callback factory """
             results = []
-
             def callback(node, parent, lineage):
                 original_code = self[fname::node.name[len(TEST_PREFIX):]]
                 original_code = str(original_code)
@@ -218,20 +227,45 @@ class Pythoscope(CLI, Wrapper):
 
         for fname, tfname, generated_test in results:
             cb1, results1 = cbf(fname)
-            rrrr, root = walkfunctions(open(tfname).read(), cb1)
-
-            yield fname,None, generate_code(root)
+            _, root = walkfunctions(generated_test, cb1)
+            code = generate_code(root)
+            yield fname, tfname, code
 
 
     def imports(self, results):
         """ copy imports from original file into test case """
+
         for fname, tname, generated_test in results:
             oldimports = pygrep(fname, "imports", raw_text=True)
-            newtest = "{old_imports}\n{gtest}"
-            newtest = newtest.format(old_imports = oldimports,
-                                     gtest=generated_test)
+            newtest = '""" {label}\n"""\n\n## Begin original imports\n{old_imports}\n\n{gtest}'
+            newtest = newtest.format(label=guess_dotpath(fname),
+                                     old_imports = oldimports,
+                                      gtest = generated_test)
+            #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
             yield fname,tname, newtest
+def scrape_dotpath_modules(fname):
+    lst = fname.split(os.path.sep)
+    lst = [[element,
+            path(os.path.sep.join(lst[:lst.index(element)+1]))] for element in lst if element]
+    lst = [[element, partial] for element,partial in lst if partial and partial.isdir()]
+    lst = [[element, partial, partial.files()] for element,partial in lst]
+    lst = [[element, partial, [x.basename() for x in files]] for element,partial,files in lst ]
+    lst = [[element, partial, files ] for element,partial,files in lst if '__init__.py' in files ]
+    lst = [ PythonModule(name=element, abspath=partial,
+                        dotpath='.'.join( [ x[0] for x in \
+                                            lst[:lst.index([element,partial,files])+1]
+                                          ] )) \
+            for element, partial, files in lst \
+            if '__init__.py' in files ]
+    return lst
 
+def guess_dotpath(fname):
+    """ """
+    for modyool in scrape_dotpath_modules(fname):
+        if modyool.abspath == path(fname).abspath().parent:
+          return modyool.dotpath
+
+    return fname.replace('.py','').replace(os.path.sep,'.'),
 plugin = Pythoscope
 if __name__=='__main__':
     pass

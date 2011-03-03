@@ -16,12 +16,20 @@ class KinbakuFile(object):
 
     @property
     def contents(self):
+        x=self.fhandle.read()
+        if x:
+            return x
+        self.fhandle.seek(0)
         return self.fhandle.read()
 
     @property
     def ast(self):
+        if not self.contents:
+            return
         try:
             return compiler.parse(self.contents)
+        except SyntaxError:
+            raise SyntaxError,"Reading file:\n"+self.contents
         except IOError:
             print console.red("IOError: {f}".format(f=str(self.fname)))
             return
