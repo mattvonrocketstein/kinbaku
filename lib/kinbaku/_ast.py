@@ -34,7 +34,7 @@ def walk(node, parent=None, lineage=[],
           anything that evaluates to true.
 
     """
-    if node is None: pass
+    if node is None: return 99
     elif isinstance(node,(str,int,float,unicode)): pass#rint node
     else:
         if isinstance(node, (list,tuple)):
