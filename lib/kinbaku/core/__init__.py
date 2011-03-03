@@ -3,8 +3,6 @@
 import StringIO
 import compiler
 
-from kinbaku._coverage import CoverageScript
-
 class KinbakuFile(object):
     """ Convenience for wrapping files
     """
@@ -32,6 +30,7 @@ class KinbakuFile(object):
 
     def run_cvg(self):
         """ """
+        from kinbaku._coverage import CoverageScript
         fhandle     = StringIO.StringIO("")
         report_args = dict( ignore_errors = False,
                             #omit = '',
