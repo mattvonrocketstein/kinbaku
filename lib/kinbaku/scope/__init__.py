@@ -17,17 +17,69 @@ from kinbaku.util import remove_recursively
 from kinbaku.pygrep import pygrep
 from kinbaku.core import KinbakuFile
 from pythoscope.generator import name2testname
-from sourcecodegen.visitor import CodeStream
+#from kinbaku._sourcecodegen import CodeStream
+from kinbaku._sourcecodegen import INDENTION
 
 TEST_PREFIX = name2testname(' ').strip()
-INDENTION   = CodeStream().indentation_string
+class Algebra:
+    def map(self):
+        """ returns {codebase-file:generated-test-file,}
 
-class Wrapper:
+            NOTE: this function is useless before self.make_tests() is called
+            see also: self.__add__
+        """
+        codebasefiles = [ codebasefile.abspath() for codebasefile in self.codebase.files() ]
+        codebasefiles = [ [codebasefile, self+codebasefile] for codebasefile in codebasefiles]
+        return dict(codebasefiles)
+
+    def __rshift__(self, fpath):
+        """ operator to get src code for fpath:
+
+              similar to:
+                x = {codebase-file:generate-test-file,}[fpath]
+                return open(x).read()
+
+            returns None if it can't map "fpath" to a testfile.
+        """
+        fpath = path(fpath).abspath()
+        out = self.map().get(fpath, None)
+        return out and open(out).read()
+
+    def __getitem__(self, slyce):
+        """ Examples:
+
+            self[fname:func_name] -->
+              src_code for corresponding test function
+
+            self[fname::func_name] -->
+              src_code for function test function was generated from
+        """
+        from pythoscope.generator import find_method_code
+        from pythoscope.astbuilder import parse
+        if not isinstance(slyce, slice):
+            raise Exception,NotImplementedYet
+        fpath,y,z = slyce.start,slyce.stop,slyce.step
+        if y:
+            out = find_method_code(parse(self>>fpath), y)
+        elif z:
+            out = find_method_code(parse(open(fpath).read()), z)
+
+        if not out:
+            raise Exception,NotImplementedYet
+        out = str(out).replace('"""',"'").split('\n')
+        def x(line):
+            if line.strip(): return INDENTION*2 + line
+            else: return INDENTION*2+line
+        out = [ x(line) for line in out]
+        return '\n'.join(out)
+
+class Wrapper(Algebra):
     """ Kinbaku wrapper for default pythoscope functionality
         adds features like file header, copying all imports,
         and better dynamic analysis.
     """
-    tests_folder = property(lambda self: self.codebase and path(self.codebase.pth_shadow) + path('/tests'))
+    tests_folder = lambda self: self.codebase and path(self.codebase.pth_shadow) + path('/tests')
+    tests_folder = property(tests_folder)
 
     @property
     def tests_files(self):
@@ -89,23 +141,6 @@ class Pythoscope(CLI, Wrapper):
         if bname in _map:
             return _map.get(bname)
 
-    def map(self):
-        """ return a map of codebase-files --> generated-test-files
-            NOTE: this function is useless before self.make_tests() is called
-            see also: self.__add__
-        """
-        cbfs = [cbf.abspath() for cbf in self.codebase.files()]
-        cbfs = [[cbf, self+cbf] for cbf in cbfs]
-        return dict(cbfs)
-
-    def __rshift__(self, other):
-        """ if map other from codebase-file to generate-test-file
-            and returns the contents of the test-file.  returns
-            None if it can't map "other" to a testfile.
-        """
-        out = self.map().get(path(other).abspath(), None)
-        return out and open(out).read()
-
     def _generate(self, input_file_or_dir, imports=True, codebase=None):
         """ from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         """
@@ -159,83 +194,45 @@ class Pythoscope(CLI, Wrapper):
             for fname,tname,generated_test in results:
                 print generated_test
 
-    def __getitem__(self, slyce):
-        """ self[fname:func_name] --> src_code for corresponding test function
-        """
-        from pythoscope.generator import find_method_code
-        from pythoscope.astbuilder import parse
-        if not isinstance(slyce,slice):
-            raise Exception,NotImplementedYet
-        x,y,z = slyce.start,slyce.stop,slyce.step
-        if y:
-            return find_method_code(parse(self>>x), y)
-        elif z:
-            return find_method_code(parse(open(x).read()), z)
-        raise Exception,NotImplementedYet
 
     def originals(self, results):
         """ original function implementation
             in test-function docstrings """
-        import sourcecodegen
+        from kinbaku._sourcecodegen import generate_code
         from kinbaku._ast import walkfunctions
-
         def cbf(fname):
             """ callback factory """
             results = []
+
             def callback(node, parent, lineage):
-                #raise Exception,node.doc
-                print 'setting', fname, node.name
                 original_code = self[fname::node.name[len(TEST_PREFIX):]]
                 original_code = str(original_code)
                 original_code = original_code#.lstrip().strip()
-                original_code = [x for x in original_code.split('\n')]
-                original_code = ['Original implementation:\n'] + original_code
-                original_code = ('\n'+INDENTION*2).join(original_code)
+                original_code = [x for x in original_code.split('\n') if x]
+                original_code = [' Original implementation:\n'] + \
+                                [x for x in original_code]
+                original_code = ('\n' ).join(original_code)
                 node.doc = str(original_code)
-                results.append( [node.name, sourcecodegen.generation.generate_code(node)])
+                results.append( [node.name, generate_code(node)])
             return callback, results
 
         for fname, tfname, generated_test in results:
             cb1, results1 = cbf(fname)
             rrrr, root = walkfunctions(open(tfname).read(), cb1)
-            #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-            yield fname,None, sourcecodegen.generate_code(root)
-            #raise Exception,sourcecodegen.generate_code(root)
-            #for func_name, func_code in results1:
-            #    test_code = self[fname:TEST_PREFIX+func_name]
 
-                #o_code    = self[fname::func_name]
-
-                #code_obj  = compiler.compile(o_code.strip().lstrip(),fname,'exec')
-                #ast       = compiler.parse(o_code.strip().lstrip(),'exec')
-                #new_src   = sourcecodegen(ast)
-                #test_code =
-                #magic = str(self[fname:TEST_PREFIX+func_name])
-                #
-                #raise Exception, [fname, func_name, ]
-            #raise Exception,noresults
-            #yield fname,tname,''
-            #newtest = generated_test #pygrep(fname,"imports",raw_text=True) + generated_test
-            #shadow_scope = {}
-            #ast = compiler.parse(exec(newtest,shadow_scope))
-            #import ast
-            #kbkfile = KinbakuFile(tname)
-            #yield fname, tname, str(find_method_code(kbkfile.ast,'test_function_f'))#str(dir(shadow_scope))
-            #raise Exception, str(find_method_code(parse(generated_test),'test_function_f'))#str(dir(shadow_scope))
-            #raise Exception, self[fname:TEST_PREFIX+'function_f']
+            yield fname,None, generate_code(root)
 
 
     def imports(self, results):
         """ copy imports from original file into test case """
         for fname, tname, generated_test in results:
-            print fname,tname,generated_test
             oldimports = pygrep(fname, "imports", raw_text=True)
             newtest = "{old_imports}\n{gtest}"
             newtest = newtest.format(old_imports = oldimports,
                                      gtest=generated_test)
             yield fname,tname, newtest
 
-    #def __init__(self, fpath=None):
-    #    pass #self.fpath=fpath or self.default_fpath
-
 plugin = Pythoscope
+if __name__=='__main__':
+    pass
+#from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
