@@ -19,6 +19,7 @@ except ImportError:
             'kinbaku.report',
             'kinbaku.plugin',
             'kinbaku.comments',
+            'kinbaku.coverage',
         ]
     have_setuptools = False
 try:
@@ -31,6 +32,8 @@ if have_setuptools:
                          { 'console_scripts': \
                            ['kinbaku = kinbaku.bin.kbk:entry', \
                             'kbk-comments = kinbaku.bin.kbk:comments', \
+                            'kbk-cvg = kinbaku.bin.kbk:coverage', \
+                            'kbk-coverage = kinbaku.bin.kbk:coverage', \
                             'kbk-scope = kinbaku.bin.kbk:scope'], \
                          }, )
 else:
