@@ -4,9 +4,10 @@ import compiler
 from StringIO import StringIO
 
 import sourcecodegen
+from peak.util.imports import lazyModule
 
 from kinbaku._types import BadDotPath
-from kinbaku.core import KinbakuFile
+core = lazyModule('kinbaku.core')
 
 node_has_lineno  = lambda node: hasattr(node,'lineno')
 node_is_function = lambda node: isinstance(node,compiler.ast.Function)
@@ -63,7 +64,7 @@ def walk(node, parent=None, lineage=[],
 def walkfunctions(src_code, callback):
     """ static analysis: walk callback over all functions """
     result = None
-    kbk_f  = KinbakuFile(fhandle=src2stringio(src_code))
+    kbk_f  = core.KinbakuFile(fhandle=src2stringio(src_code))
     root   = kbk_f.ast
     return walk(root, test=node_is_function, callback=callback, ),root
 
@@ -79,7 +80,7 @@ def dotpath2ast(src_code, dotpath):
         if this_dotpath==dotpath:
             return sourcecodegen.generation.generate_code(node),node
 
-    kbk_f = KinbakuFile(fhandle=src2stringio(src_code))
+    kbk_f = core.KinbakuFile(fhandle=src2stringio(src_code))
     return walk(kbk_f.ast, test=node_is_function, callback=callback, )
 
 def dotpath2obj(src_code, dotpath):

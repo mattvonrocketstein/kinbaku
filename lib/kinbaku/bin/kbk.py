@@ -123,6 +123,7 @@ def manufacture_shortcut(name ):
     return lambda: handle_main_argument(*(list(PARSER())+[name]))
 comments=manufacture_shortcut('comments')
 scope = manufacture_shortcut('scope')
+coverage = manufacture_shortcut('scope')
 #def scope():    handle_main_argument(*(list(PARSER())+['scope']))
 
 if __name__=='__main__':
