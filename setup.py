@@ -6,6 +6,7 @@
 
 import os
 from setuptools import setup, find_packages
+os.chdir(os.path.split(__file__)[0])
 
 try:
     from setuptools import setup, find_packages
@@ -16,9 +17,10 @@ except ImportError:
         return [
             'kinbaku',
             'kinbaku.core',
-            'kinbaku.report',
             'kinbaku.plugin',
             'kinbaku.comments',
+            'kinbaku.report',
+            'kinbaku.run',
         ]
     have_setuptools = False
 try:
@@ -31,6 +33,7 @@ if have_setuptools:
                          { 'console_scripts': \
                            ['kinbaku = kinbaku.bin.kbk:entry', \
                             'kbk-comments = kinbaku.bin.kbk:comments', \
+                            'kbk-run = kinbaku.bin.kbk:run', \
                             'kbk-scope = kinbaku.bin.kbk:scope'], \
                          }, )
 else:

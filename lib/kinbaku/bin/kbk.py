@@ -121,6 +121,7 @@ def entry():
 
 def comments(): handle_main_argument(*(list(PARSER())+['comments']))
 def scope(): handle_main_argument(*(list(PARSER())+['scope']))
+def run(): handle_main_argument(*(list(PARSER())+['run']))
 
 if __name__=='__main__':
     entry()
