@@ -39,7 +39,9 @@ class CLI(KinbakuPlugin):
               __main__ section will be invoked for @fpath,
               functions not matching a name in @names will be ignored.
         """
-
+        if not names:
+            print "Refusing to trace everything.  Provide a name-pattern with --name."
+            sys.exit(1)
         def sayhello():
             hdr  = console.red("executing: ")
             hdr += console.color(str(dict(watchlist=watchlst))).strip()
