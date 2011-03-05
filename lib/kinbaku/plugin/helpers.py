@@ -1,4 +1,4 @@
-""" kinbaku.plugin_helpers
+""" kinbaku.plugin.helpers
 
     Helpers for plugin pattern
 
