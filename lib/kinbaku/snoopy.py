@@ -10,7 +10,7 @@ import inspect
 from kinbaku.tracers import CallTracer
 from kinbaku._functools import Fingerprint
 from kinbaku.report import console
-from kinbaku._types import is_atom
+from kinbaku.python import is_atom
 
 SNOOP_REGISTRY = []
 
