@@ -4,9 +4,9 @@ import os
 import compiler
 
 from kinbaku.report import console, report
-from kinbaku.python.signatures import Signature
-from kinbaku.python import Comment
-from kinbaku.python import is_atom
+#from kinbaku.python.signatures import Signature
+#from kinbaku.python import Comment
+#from kinbaku.python import is_atom
 
 class UnusableCodeError(ValueError): pass
 class BadDotPath(ValueError):        pass

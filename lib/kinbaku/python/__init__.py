@@ -4,6 +4,8 @@
 """
 
 from kinbaku.python.comments import PythonComment as Comment
+from kinbaku.python._module import PythonModule
+from kinbaku.python.signatures import Signature
 
 def is_atom(arg):
     """ an argument is an atom iff it is

@@ -10,7 +10,7 @@ from rope.refactor.importutils import ImportTools, importinfo, add_import
 from kinbaku.report import console, report
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 from kinbaku.codebase import plugin as CodeBase
-from kinbaku._types import Comment
+from kinbaku.python import Comment
 
 def stdin2tmpfile(fpath):
     """ """
