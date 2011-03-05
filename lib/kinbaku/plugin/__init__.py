@@ -4,7 +4,7 @@
 import copy
 import sys, os
 import inspect
-
+DEFAULT_PROGNAME='kinbaku'
 from types import BooleanType,StringType
 from optparse import OptionParser
 
@@ -50,11 +50,13 @@ class Plugin(object):
         progname   = os.path.split(sys.argv[0])[1]
         sig_obj, sig_str = func2sig(func)
         car =  "{kinbaku} ".format(kinbaku = progname)
-        if self._parse_main.strip()==modname.strip():
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        if progname != DEFAULT_PROGNAME: #self._parse_main.strip()==modname.strip():
             plugin=''
         else:
-            plugin=modname
-        cdr = '{plugin} {S}'.format(S=sig_str, plugin = plugin )
+            plugin = modname
+        plugin=plugin and plugin+' '
+        cdr = '{plugin}{S}'.format(S=sig_str, plugin = plugin )
         return car+cdr
 
     @classmethod
@@ -128,14 +130,8 @@ class Plugin(object):
             print err
             sys.exit()
 
-        #print args,kargs
-        #try:
         result = func(*args, **kargs) #kls.display_results(result)
-        #except TypeError,t:
-        #    raise t
-        #    if func.func_name+'()' in str(t):
-        #        print " Usage: ",func2sig(func)[1]
-        #        sys.exit(1)
+
 
     def get_subcommands(self):
         """ """
@@ -160,7 +156,7 @@ class Plugin(object):
 
             _ex = console.blue(self.prepare_sig(func, modname))
 
-            if doc: dox =  filter(None, [x.strip() for x in doc.split('\n')] )
+            if doc: dox = filter(None, [x.strip() for x in doc.split('\n')] )
             else:   dox = [ "No documentation yet." ]
 
             for line in dox:
@@ -173,7 +169,7 @@ class Plugin(object):
                                  space1=' ',#*(45-len(ex)),
                                  indent = ' '*indent,)
                 if first_loop:
-                    print '\t'+ _ex
+                    print '\t' + _ex
                 print '\t'+ out + line or ""
         return cls_names
 
@@ -189,7 +185,6 @@ class Plugin(object):
             import IPython;IPython.Shell.IPShellEmbed(argv=[])()
        """
        if isinstance(result,list):
-           #report(*result)
            for x in result:
                print '  ',x
        elif isinstance(result,dict):
