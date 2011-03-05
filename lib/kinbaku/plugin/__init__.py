@@ -12,13 +12,13 @@ from path import path
 from pep362 import signature
 
 from kinbaku.python import Signature
-from kinbaku.plugin_helpers import panic
-from kinbaku.plugin_helpers import display
-from kinbaku.plugin_helpers import str2list
-from kinbaku.plugin_helpers import position
-from kinbaku.plugin_helpers import dvdisplay,func2sig
-from kinbaku.plugin_helpers import oparser_from_sig
-from kinbaku.plugin_helpers import options2dictionary
+from kinbaku.plugin.helpers import panic
+from kinbaku.plugin.helpers import display
+from kinbaku.plugin.helpers import str2list
+from kinbaku.plugin.helpers import position
+from kinbaku.plugin.helpers import dvdisplay,func2sig
+from kinbaku.plugin.helpers import oparser_from_sig
+from kinbaku.plugin.helpers import options2dictionary
 
 from kinbaku.report import report, console
 
