@@ -120,7 +120,46 @@ class Wrapper(Algebra):
             remove_recursively(self.workspace)
         init_project(fpath)
 
-class Pythoscope(CLI, Wrapper):
+class PostProcessors(object):
+    def originals(self, results):
+        """ original function implementation
+            in test-function docstrings """
+        from kinbaku._sourcecodegen import generate_code
+        from kinbaku._ast import walkfunctions
+        def cbf(fname):
+            """ callback factory """
+            results = []
+            def callback(node, parent, lineage):
+                original_code = self[fname::node.name[len(TEST_PREFIX):]]
+                original_code = str(original_code)
+                original_code = original_code.rstrip()
+                original_code = [x for x in original_code.split('\n') if x]
+                original_code = [' Original implementation:\n'] + \
+                                [x for x in original_code]
+                original_code = ('\n' ).join(original_code)
+                node.doc = str(original_code)
+                results.append( [node.name, generate_code(node)+'\n'])
+            return callback, results
+
+        for fname, tfname, generated_test in results:
+            cb1, results1 = cbf(fname)
+            _, root = walkfunctions(generated_test, cb1)
+            code = generate_code(root)
+            yield fname, tfname, code
+
+
+    def imports(self, results):
+        """ copy imports from original file into test case """
+
+        for fname, tname, generated_test in results:
+            oldimports = pygrep(fname, "imports", raw_text=True)
+            newtest = '""" {label}\n"""\n\n## Begin: Original imports\n{old_imports}\n## Fin:   Original imports\n\n{gtest}'
+            newtest = newtest.format(label=guess_dotpath(fname),
+                                     old_imports = oldimports,
+                                     gtest = generated_test)
+            yield fname, tname, newtest
+
+class Pythoscope(CLI, Wrapper, PostProcessors):
 
     codebase = None
 
@@ -159,16 +198,9 @@ class Pythoscope(CLI, Wrapper):
         self.make_tests()
         _map = self.map()
         one_argument = len(_map)==1
-        _map = ( [fname, tname, self>>fname] for fname,tname in _map.items() )
+        for fname,tname in _map.items():
+            yield fname, tname, self>>fname
 
-        if one_argument:
-            return _map #self >> _map.next()[0]
-        else:
-            raise Exception,'not supportd yet'
-            #for fname,generated_test in _map:
-            #    console.blue(fname); console.divider()
-            #    print generated_test
-            #    console.divider()
 
     @publish_to_commandline
     def generate(self, input_file_or_dir, originals=True, imports=True):
@@ -188,49 +220,38 @@ class Pythoscope(CLI, Wrapper):
             self.codebase = codebase
             results = self._generate(input_file_or_dir,imports=imports,codebase=codebase)
 
-            for postprocessor in postprocessors:
-                results = postprocessor(results)
+            if originals:
+                results = self.originals( [x for x in results] )
+            if imports:
+                results = self.imports( [x for x in results] )
 
             for fname,tname,generated_test in results:
                 print generated_test
+from kinbaku.python import PythonModule
+def scrape_dotpath_modules(fname):
+    """ """
+    lst = fname.split(os.path.sep)
+    lst = [[element,
+            path(os.path.sep.join(lst[:lst.index(element)+1]))] for element in lst if element]
+    lst = [[element, partial] for element,partial in lst if partial and partial.isdir()]
+    lst = [[element, partial, partial.files()] for element,partial in lst]
+    lst = [[element, partial, [x.basename() for x in files]] for element,partial,files in lst ]
+    lst = [[element, partial, files ] for element,partial,files in lst if '__init__.py' in files ]
+    lst = [ PythonModule(name=element, abspath=partial,
+                        dotpath='.'.join( [ x[0] for x in \
+                                            lst[:lst.index([element,partial,files])+1]
+                                          ] )) \
+            for element, partial, files in lst \
+            if '__init__.py' in files ]
+    return lst
 
+def guess_dotpath(fname):
+    """ """
+    for modyool in scrape_dotpath_modules(fname):
+        if modyool.abspath == path(fname).abspath().parent:
+          return modyool.dotpath
 
-    def originals(self, results):
-        """ original function implementation
-            in test-function docstrings """
-        from kinbaku._sourcecodegen import generate_code
-        from kinbaku._ast import walkfunctions
-        def cbf(fname):
-            """ callback factory """
-            results = []
-
-            def callback(node, parent, lineage):
-                original_code = self[fname::node.name[len(TEST_PREFIX):]]
-                original_code = str(original_code)
-                original_code = original_code#.lstrip().strip()
-                original_code = [x for x in original_code.split('\n') if x]
-                original_code = [' Original implementation:\n'] + \
-                                [x for x in original_code]
-                original_code = ('\n' ).join(original_code)
-                node.doc = str(original_code)
-                results.append( [node.name, generate_code(node)])
-            return callback, results
-
-        for fname, tfname, generated_test in results:
-            cb1, results1 = cbf(fname)
-            rrrr, root = walkfunctions(open(tfname).read(), cb1)
-
-            yield fname,None, generate_code(root)
-
-
-    def imports(self, results):
-        """ copy imports from original file into test case """
-        for fname, tname, generated_test in results:
-            oldimports = pygrep(fname, "imports", raw_text=True)
-            newtest = "{old_imports}\n{gtest}"
-            newtest = newtest.format(old_imports = oldimports,
-                                     gtest=generated_test)
-            yield fname,tname, newtest
+    return fname.replace('.py','').replace(os.path.sep,'.'),
 
 plugin = Pythoscope
 if __name__=='__main__':

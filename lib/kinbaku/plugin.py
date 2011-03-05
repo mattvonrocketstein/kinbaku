@@ -11,7 +11,7 @@ from optparse import OptionParser
 from path import path
 from pep362 import signature
 
-from kinbaku._types import Signature
+from kinbaku.python import Signature
 from kinbaku.plugin_helpers import panic
 from kinbaku.plugin_helpers import display
 from kinbaku.plugin_helpers import str2list
