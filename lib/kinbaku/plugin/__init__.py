@@ -5,22 +5,25 @@ import copy
 import sys, os
 import inspect
 
-from types import BooleanType,StringType
+from types import StringType
+from types import BooleanType
 from optparse import OptionParser
 
 from path import path
 from pep362 import signature
 
-from kinbaku._types import Signature
-from kinbaku.plugin_helpers import panic
-from kinbaku.plugin_helpers import display
-from kinbaku.plugin_helpers import str2list
-from kinbaku.plugin_helpers import position
-from kinbaku.plugin_helpers import dvdisplay,func2sig
-from kinbaku.plugin_helpers import oparser_from_sig
-from kinbaku.plugin_helpers import options2dictionary
+from kinbaku.python import Signature
+from kinbaku.plugin.helpers import panic
+from kinbaku.plugin.helpers import display
+from kinbaku.plugin.helpers import str2list
+from kinbaku.plugin.helpers import position
+from kinbaku.plugin.helpers import dvdisplay,func2sig
+from kinbaku.plugin.helpers import oparser_from_sig
+from kinbaku.plugin.helpers import options2dictionary
 
 from kinbaku.report import report, console
+
+DEFAULT_PROGNAME = 'kinbaku'
 
 def publish_to_commandline(func):
     """ decorator for plugin methods """
@@ -29,7 +32,7 @@ def publish_to_commandline(func):
 
 def is_published_to_commandline(func):
     """ detects functions that have been marked for publishcation """
-    return hasattr(func,'is_published_to_commandline')
+    return hasattr(func, 'is_published_to_commandline')
 
 def get_path_from_config():
     """ Gets "path" by way of the Config-plugin.
@@ -50,11 +53,12 @@ class Plugin(object):
         progname   = os.path.split(sys.argv[0])[1]
         sig_obj, sig_str = func2sig(func)
         car =  "{kinbaku} ".format(kinbaku = progname)
-        if self._parse_main.strip()==modname.strip():
+        if progname != DEFAULT_PROGNAME:
             plugin=''
         else:
-            plugin=modname
-        cdr = '{plugin} {S}'.format(S=sig_str, plugin = plugin )
+            plugin = modname
+        plugin=plugin and plugin+' '
+        cdr = '{plugin}{S}'.format(S=sig_str, plugin = plugin )
         return car+cdr
 
     @classmethod
@@ -128,19 +132,13 @@ class Plugin(object):
             print err
             sys.exit()
 
-        #print args,kargs
-        #try:
         result = func(*args, **kargs) #kls.display_results(result)
-        #except TypeError,t:
-        #    raise t
-        #    if func.func_name+'()' in str(t):
-        #        print " Usage: ",func2sig(func)[1]
-        #        sys.exit(1)
+
 
     def get_subcommands(self):
         """ """
         return [ x for x in dir(self.__class__) if \
-                 is_published_to_commandline(getattr(self, x)) and\
+                 is_published_to_commandline(getattr(self, x)) and \
                  x!='help' ]
 
     @publish_to_commandline
@@ -160,7 +158,7 @@ class Plugin(object):
 
             _ex = console.blue(self.prepare_sig(func, modname))
 
-            if doc: dox =  filter(None, [x.strip() for x in doc.split('\n')] )
+            if doc: dox = filter(None, [x.strip() for x in doc.split('\n')] )
             else:   dox = [ "No documentation yet." ]
 
             for line in dox:
@@ -173,7 +171,7 @@ class Plugin(object):
                                  space1=' ',#*(45-len(ex)),
                                  indent = ' '*indent,)
                 if first_loop:
-                    print '\t'+ _ex
+                    print '\t' + _ex
                 print '\t'+ out + line or ""
         return cls_names
 
@@ -183,22 +181,12 @@ class Plugin(object):
     @staticmethod
     def display_results(result):
        """
-            console.draw_line(msg="inside context")
-            report("codebase", codebase) #report("  test_files: "); report(*[fname for fname in codebase])
-            test_search = codebase.search("zam"); #report("  test_search: {results}",results=str(test_search))
-            import IPython;IPython.Shell.IPShellEmbed(argv=[])()
        """
-       if isinstance(result,list):
-           #report(*result)
+       if isinstance(result, list):
            for x in result:
-               print '  ',x
-       elif isinstance(result,dict):
+               print '  ', x
+       elif isinstance(result, dict):
            report(**result)
        else:
            pass
-           #report("Not sure how to deal with answer:", result)
 KinbakuPlugin = Plugin
-
-
-
-#show_all_plugins()

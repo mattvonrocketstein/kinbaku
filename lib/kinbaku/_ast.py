@@ -6,6 +6,7 @@ from StringIO import StringIO
 import sourcecodegen
 from peak.util.imports import lazyModule
 
+from kinbaku._sourcecodegen import generate_code
 from kinbaku._types import BadDotPath
 core = lazyModule('kinbaku.core')
 

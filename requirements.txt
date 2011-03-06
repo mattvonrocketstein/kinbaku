@@ -1,4 +1,6 @@
+
 peak
+coverage
 docutils
 path.py
 pygments
@@ -10,4 +12,5 @@ pep362
 pythoscope
 sourcecodegen==0.6.13
 git+git://github.com/mattvonrocketstein/multimethods-py.git#egg=multimethods
-coverage
+git+git://github.com/mattvonrocketstein/pygenie.git#egg=pygenie
+
