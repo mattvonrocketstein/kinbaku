@@ -4,8 +4,9 @@
 import copy
 import sys, os
 import inspect
-DEFAULT_PROGNAME='kinbaku'
-from types import BooleanType,StringType
+
+from types import StringType
+from types import BooleanType
 from optparse import OptionParser
 
 from path import path
@@ -22,6 +23,8 @@ from kinbaku.plugin.helpers import options2dictionary
 
 from kinbaku.report import report, console
 
+DEFAULT_PROGNAME = 'kinbaku'
+
 def publish_to_commandline(func):
     """ decorator for plugin methods """
     func.is_published_to_commandline = True
@@ -29,7 +32,7 @@ def publish_to_commandline(func):
 
 def is_published_to_commandline(func):
     """ detects functions that have been marked for publishcation """
-    return hasattr(func,'is_published_to_commandline')
+    return hasattr(func, 'is_published_to_commandline')
 
 def get_path_from_config():
     """ Gets "path" by way of the Config-plugin.
@@ -50,8 +53,7 @@ class Plugin(object):
         progname   = os.path.split(sys.argv[0])[1]
         sig_obj, sig_str = func2sig(func)
         car =  "{kinbaku} ".format(kinbaku = progname)
-        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-        if progname != DEFAULT_PROGNAME: #self._parse_main.strip()==modname.strip():
+        if progname != DEFAULT_PROGNAME:
             plugin=''
         else:
             plugin = modname
@@ -136,7 +138,7 @@ class Plugin(object):
     def get_subcommands(self):
         """ """
         return [ x for x in dir(self.__class__) if \
-                 is_published_to_commandline(getattr(self, x)) and\
+                 is_published_to_commandline(getattr(self, x)) and \
                  x!='help' ]
 
     @publish_to_commandline
@@ -179,21 +181,12 @@ class Plugin(object):
     @staticmethod
     def display_results(result):
        """
-            console.draw_line(msg="inside context")
-            report("codebase", codebase) #report("  test_files: "); report(*[fname for fname in codebase])
-            test_search = codebase.search("zam"); #report("  test_search: {results}",results=str(test_search))
-            import IPython;IPython.Shell.IPShellEmbed(argv=[])()
        """
-       if isinstance(result,list):
+       if isinstance(result, list):
            for x in result:
-               print '  ',x
-       elif isinstance(result,dict):
+               print '  ', x
+       elif isinstance(result, dict):
            report(**result)
        else:
            pass
-           #report("Not sure how to deal with answer:", result)
 KinbakuPlugin = Plugin
-
-
-
-#show_all_plugins()

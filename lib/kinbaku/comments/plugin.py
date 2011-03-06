@@ -4,7 +4,7 @@
 import sys
 from path import path
 
-from kinbaku._types import Comment
+from kinbaku.python import Comment
 from kinbaku.report import console, report
 from kinbaku.codebase import plugin as CodeBase
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
