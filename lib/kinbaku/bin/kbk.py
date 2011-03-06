@@ -125,12 +125,3 @@ def metrics(): handle_main_argument(*(list(PARSER())+['metrics']))
 
 if __name__=='__main__':
     entry()
-
-#codebox = '/home/matt/code/kinbaku/codebox'
-#with CodeBase(codebox, gloves_off=True) as codebase:
-#divider(msg='inside context')
-#report("codebase", codebase) #report("  test_files: "); report(*[fname for fname in codebase])
-#test_search = codebase.search("zam"); #report("  test_search: {results}",results=str(test_search))
-#import IPython;IPython.Shell.IPShellEmbed(argv=[])()
-#for x in test_search: print x
-#print 'next', codebase.next() #search(codebase, name)

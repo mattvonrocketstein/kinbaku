@@ -17,23 +17,74 @@ class SimplePlugin(KinbakuPlugin):
         return kls()
 
 class Metrics(SimplePlugin):
-    """ """
+    """ code metrics plugin """
+
+    @publish_to_commandline
+    def hall_of_shame(self, fpath, cutoff=3, maxnum=10):
+        """ shows the most complex parts of the code in fpath """
+        results = self._hall_of_shame(fpath, cutoff=cutoff, maxnum=maxnum)
+        results = filter(lambda x: x[1],results)
+        results.sort(lambda x,y: cmp(max([z[-1] for z in x[1]]),
+                                     max([z[-1] for z in y[1]])))
+        for fpath, stats in results:
+            print
+            print console.blue(fpath)
+            console.divider()
+            for x, y, z in stats:
+                print x, y, z
+            console.divider()
+
+    def _hall_of_shame(self, fpath, cutoff=3, maxnum=10):
+        """ show the most complex entries in fpath """
+        out =  []
+        results = self._complexity(fpath)
+
+        for fpath, stats in results.items():
+            if isinstance(stats,dict):
+                stats = stats[fpath.abspath()]
+            stats = [ [_type, dotpath, score ]
+                      for _type, dotpath, score in stats
+                      if score > cutoff ]
+            stats.sort(lambda x, y: cmp(x[-1], y[-1]))
+            out.append( [ fpath, stats ] )
+        return out
+
+
     @publish_to_commandline
     def complexity(self, fname, files=True, methods=True, classes=True):
         """ shows cyclomatic complexity statistics for files, methods, and classes.
             passing any of --files, --methods, --classes leaves those types of
             objects out of reporting. """
-        if path(fname).isdir():
-            for fpath in CodeBase(path(fname),gloves_off=True).python_files:
-                print '\n',console.blue(fpath)
-                console.divider()
-                self.complexity(fpath, files=files, methods=methods, classes=classes)
-            return
-        out = KinbakuFile(fname).complexity()
-        if not methods: out = filter(lambda item: item[0] != 'method', out)
-        if not files:   out = filter(lambda item:   item[0] != 'file', out)
-        if not classes: out = filter(lambda item: item[0] != 'class', out)
-        for _type, dotpath, score in out:
-            print score, console.blue(_type), console.red(dotpath)
+        out = self._complexity(fname, files=files, methods=methods, classes=classes)
+        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+        for fpath, results in out.items():
+            print '\n', console.blue(fpath), '\n', console.divider(display=False)
+            #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
+            #if isinstance(results,list):
+            #    print results
+            if isinstance(results,dict):
+                results = results[results.keys()[0]]
+            for _type, dotpath, score in results:
+                print score, console.blue(_type), console.red(dotpath)
+            console.divider()
+    def _complexity(self, *args, **kargs):
+        return dict(self._zcomplexity(*args, **kargs))
 
-plugin=Metrics
+    def _zcomplexity(self, fname, files=True,
+                     methods=True, classes=True):
+        """ """
+        if path(fname).isdir():
+            out = []
+            for fpath in CodeBase(path(fname),gloves_off=True).python_files:
+                stats = self._complexity(fpath, files=files,
+                                         methods=methods, classes=classes)
+                out += [ [ fpath, stats ] ]
+            return out
+        out = KinbakuFile(fname).complexity()
+
+        if not methods: out = filter(lambda item: item[0] != 'method', out)
+        if not files:   out = filter(lambda item: item[0] != 'file',   out)
+        if not classes: out = filter(lambda item: item[0] != 'class',  out)
+        return [ [ path(fname).abspath(), out ] ]
+
+plugin = Metrics

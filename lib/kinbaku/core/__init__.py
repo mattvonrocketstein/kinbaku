@@ -7,6 +7,19 @@ from StringIO import StringIO
 from path import path
 from pygenie.cc import measure_complexity, PrettyPrinter
 
+def gettype(x):
+    """ """
+    if x=='X': return 'file'
+    if x=='M': return 'method'
+    if x=='C': return 'class'
+    if x=='F': return 'function'
+    return x
+
+def getpath(_type,dotpath):
+    """ """
+    if _type=='X': return path(dotpath).abspath()
+    return dotpath #Dotpath(dotpath)
+
 class KinbakuFile(object):
     """ Convenience for wrapping files
     """
@@ -16,14 +29,17 @@ class KinbakuFile(object):
 
     @property
     def fhandle(self):
+        """ """
         return self._fhandle or open(self.fname,'r')
 
     @property
     def contents(self):
+        """ """
         return self.fhandle.read()
 
     @property
     def ast(self):
+        """ """
         try:
             return compiler.parse(self.contents)
         except IOError:
@@ -35,25 +51,21 @@ class KinbakuFile(object):
     def complexity(self):
         """ returns cyclomatic complexity statistics
             in the following format:
-            [('X', 'some/path/name.py', complexity_score),
-             ('C', 'SomeClass', complexity_score),
-             ('M', 'SomeClass.__str__', complexity_score),
-            ]
 
+            [ ('X', 'some/path/name.py', complexity_score),
+              ('C', 'SomeClass',         complexity_score),
+              ('M', 'SomeClass.__str__', complexity_score), ]
         """
         from kinbaku.python import Dotpath
-        def gettype(x):
-            if x=='X': return 'file'
-            if x=='M': return 'method'
-            if x=='C': return 'class'
-        def getpath(_type,dotpath):
-            """ """
-            if _type=='X': return path(dotpath).abspath()
-            return dotpath #Dotpath(dotpath)
 
-        stats = measure_complexity(self.contents, self.fname)
+        try:
+            stats = measure_complexity(self.contents, self.fname)
+        except SyntaxError:
+            return None
         out   = PrettyPrinter(StringIO()).flatten_stats(stats)
-        out   = [[gettype(_type), getpath(_type,dotpath), score] for _type,dotpath,score in out]
+        out   = [ [ gettype(_type),
+                    getpath(_type,dotpath),
+                    score ] for _type, dotpath, score in out ]
         return out
 
     def run_cvg(self):
