@@ -2,6 +2,10 @@
 """
 
 import compiler
+from StringIO import StringIO
+
+from path import path
+from pygenie.cc import measure_complexity, PrettyPrinter
 
 class KinbakuFile(object):
     """ Convenience for wrapping files
@@ -27,6 +31,30 @@ class KinbakuFile(object):
             return
 
     def parse(self): return self.ast
+
+    def complexity(self):
+        """ returns cyclomatic complexity statistics
+            in the following format:
+            [('X', 'some/path/name.py', complexity_score),
+             ('C', 'SomeClass', complexity_score),
+             ('M', 'SomeClass.__str__', complexity_score),
+            ]
+
+        """
+        from kinbaku.python import Dotpath
+        def gettype(x):
+            if x=='X': return 'file'
+            if x=='M': return 'method'
+            if x=='C': return 'class'
+        def getpath(_type,dotpath):
+            """ """
+            if _type=='X': return path(dotpath).abspath()
+            return dotpath #Dotpath(dotpath)
+
+        stats = measure_complexity(self.contents, self.fname)
+        out   = PrettyPrinter(StringIO()).flatten_stats(stats)
+        out   = [[gettype(_type), getpath(_type,dotpath), score] for _type,dotpath,score in out]
+        return out
 
     def run_cvg(self):
         """ """

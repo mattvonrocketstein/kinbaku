@@ -119,6 +119,7 @@ class PostProcessors(object):
     def examples(self, results):
         """ find examples for fach function if possible """
         for fname, tname, generated_test in results:
+
             pass
 
 class Pythoscope(CLI, Wrapper, PostProcessors):
