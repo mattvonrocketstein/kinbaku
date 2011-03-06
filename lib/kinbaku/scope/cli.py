@@ -6,4 +6,7 @@ import sys
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline
 
 class CLI(KinbakuPlugin):
-    pass
+
+    @classmethod
+    def spawn(kls, **kargs):
+        return kls() #Pythoscope()

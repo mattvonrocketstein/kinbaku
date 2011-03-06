@@ -5,6 +5,7 @@ from StringIO import StringIO
 
 import sourcecodegen
 
+from kinbaku._sourcecodegen import generate_code
 from kinbaku._types import BadDotPath
 from kinbaku.core import KinbakuFile
 
