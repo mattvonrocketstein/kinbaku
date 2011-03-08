@@ -6,7 +6,7 @@
 
 import os
 from setuptools import setup, find_packages
-os.chdir(os.path.split(__file__)[0])
+os.chdir(os.path.abspath(os.path.split(__file__)[0]))
 
 try:
     from setuptools import setup, find_packages
