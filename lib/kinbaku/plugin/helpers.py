@@ -33,8 +33,9 @@ def func2sig(func):
 def oparser_from_sig(func_sig):
     """ dynamically generates option-parser
         subclass for function signature """
+
     class Foo(OptionParser):
-        pass
+        secret_options={}
     obj=Foo()
     for name,val in func_sig.default_values.items():
         kargs = dict(dest=name, metavar=name.upper())
@@ -43,6 +44,16 @@ def oparser_from_sig(func_sig):
             else:   kargs.update(dict(default=val, action="store_true"))
         elif isinstance(val, StringType):
             kargs.update(default=val)
+        elif isinstance(val, int):
+            def callback(option, opt, value, parser,name=None,val=None):
+                parser.secret_options[name] = value
+                #print '(((((((((((((',parser.secret_options
+
+            kargs.update(dict(nargs=1,
+                              default=val, type="int",
+                              action='callback',callback=callback,
+                              callback_kwargs=dict(name=name,
+                                                  val=val)))
         else:
             kargs={} # abort.. not sure what to do yet
             #raise Exception,[name,val]
@@ -57,9 +68,10 @@ def display(t):
     else:
         return display1(t[1])
 
-def options2dictionary(options):
+def options2dictionary(zoptions, parser):
     """ conversion to dictionary  from an optparser.options instance """
-    options         = eval(str(options))
+    options         = eval(str(zoptions))
+    options.update(parser.secret_options)
     return options
 
 def dvdisplay(p):
