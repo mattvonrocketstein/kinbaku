@@ -84,8 +84,8 @@ class Plugin(object):
             from kinbaku.bin.kbk import USAGE
             print USAGE
             sys.exit()
-
-        options = options2dictionary(options)
+        mock = type("tmp",(object,),dict(secret_options={}))
+        options = options2dictionary(options, mock)
         try:
             instance = kls.spawn(**options)
         except TypeError:
@@ -103,15 +103,15 @@ class Plugin(object):
             # discards the arguments, keeping original
             parser     = oparser_from_sig(func_sig)
             options, _ = parser.parse_args()
-            options    = options2dictionary(options)
+            options    = options2dictionary(options, parser)
             kargs      = options
 
             # clean up things that are in both args/kargs because
             #  of the weird way this stuff is getting parsed..
-            if len(args)>len(kargs):
-                for v in kargs.values():
-                    if v in args:
-                        args.pop(args.index(v))
+            #if len(args) >= len(kargs):
+            for v in kargs.values():
+                if str(v) in args:
+                    args.pop(args.index(str(v)))
 
             # answer "help" in a context-sensitive way if it's
             # somewhere on the command line
@@ -131,7 +131,7 @@ class Plugin(object):
             err  = err.format(**fmt)
             print err
             sys.exit()
-
+        print args, kargs
         result = func(*args, **kargs) #kls.display_results(result)
 
 
