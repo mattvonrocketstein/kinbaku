@@ -8,7 +8,8 @@ import sourcecodegen
 from kinbaku._ast import walk
 from kinbaku._ast import node_is_function, node_is_module
 from kinbaku._ast import dotpath2ast, dotpath2obj
-from kinbaku._types import Comment,KinbakuFile
+from kinbaku.python import Comment
+from kinbaku.core import KinbakuFile
 from kinbaku._types import BadDotPath
 
 strip_string_markers = lambda line: line.replace('"','').replace("'",'')
