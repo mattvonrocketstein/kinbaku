@@ -16,6 +16,7 @@ except ImportError:
         return [
             'kinbaku',
             'kinbaku.core',
+            'kinbaku.metrics',
             'kinbaku.report',
             'kinbaku.plugin',
             'kinbaku.comments',
@@ -34,6 +35,7 @@ if have_setuptools:
                             'kbk-comments = kinbaku.bin.kbk:comments', \
                             'kbk-cvg = kinbaku.bin.kbk:coverage', \
                             'kbk-coverage = kinbaku.bin.kbk:coverage', \
+                            'kbk-metrics = kinbaku.bin.kbk:metrics', \
                             'kbk-scope = kinbaku.bin.kbk:scope'], \
                          }, )
 else:
