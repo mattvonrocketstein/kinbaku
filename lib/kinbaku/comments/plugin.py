@@ -46,7 +46,12 @@ class CommentsExtractor(KinbakuPlugin):
             print msg4
 
     @publish_to_commandline
-    def extract(self, input_file_or_dir, comments=False,docstrings=False):
+    def docstrings(self, input_file_or_dir):
+        """ shortcut for "extract <input_file_or_dir> --docstrings" """
+        return self.extract(input_file_or_dir,docstrings=True)
+
+    @publish_to_commandline
+    def extract(self, input_file_or_dir, comments=False, docstrings=False):
         """ extract comments, organized by container.
             if --docstrings is True, only docstring-style comments will be displayed.
             if --comments is True, only hash-mark style comments will be displayed.
@@ -59,6 +64,7 @@ class CommentsExtractor(KinbakuPlugin):
         for comment_lst in lst_of_comment_lsts:
             owner_display = console.blue(comment_lst[0].rowner())
             print '\nin "{owner}":'.format(owner=owner_display)
+            console.draw_line()
             print '\n'.join([str(comment) for comment in comment_lst])
 
     def _extract(self, input_file_or_dir, comments=True, docstrings=True):

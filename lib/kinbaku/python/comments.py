@@ -27,11 +27,13 @@ class PythonComment(object):
 
 
     def __str__(self):
+        from kinbaku.report import console
         dox = console.color(self.text).rstrip()
         return '{lineno}:\t{dox}'.format(lineno=self.lineno,
                                           dox=dox, )
     def display(self):
         print str(self)
+
 
     def __init__(self,lineno=-1, text='', full_line=False,owner='??'):
         self.owner     = owner
