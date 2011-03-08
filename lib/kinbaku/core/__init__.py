@@ -38,7 +38,8 @@ class KinbakuFile(object):
         x = self.fhandle.read()
         if x:
             return x
-        self.fh
+        #self.fh
+
     @property
     def ast(self):
         """ """
@@ -63,11 +64,13 @@ class KinbakuFile(object):
               ('M', 'SomeClass.__str__', complexity_score), ]
         """
         from kinbaku.python import Dotpath
-
+        if not self.contents:
+            return
         try:
             stats = measure_complexity(self.contents, self.fname)
         except SyntaxError:
             return None
+
         out   = PrettyPrinter(StringIO()).flatten_stats(stats)
         out   = [ [ gettype(_type),
                     getpath(_type,dotpath),
