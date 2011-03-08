@@ -31,7 +31,7 @@ class Metrics(SimplePlugin):
             print console.blue(fpath)
             console.divider()
             for x, y, z in stats:
-                print x, y, z
+                print z, x, y
             console.divider()
 
     def _hall_of_shame(self, fpath, cutoff=3, maxnum=10):
@@ -42,6 +42,7 @@ class Metrics(SimplePlugin):
         for fpath, stats in results.items():
             if isinstance(stats,dict):
                 stats = stats[fpath.abspath()]
+            if stats is None: continue
             stats = [ [_type, dotpath, score ]
                       for _type, dotpath, score in stats
                       if score > cutoff ]
