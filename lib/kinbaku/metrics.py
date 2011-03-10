@@ -23,9 +23,6 @@ class Metrics(SimplePlugin):
     def hall_of_shame(self, fpath, cutoff=3, maxnum=10):
         """ shows the most complex parts of the code in fpath """
         results = self._hall_of_shame(fpath, cutoff=cutoff, maxnum=maxnum)
-        results = filter(lambda x: x[1],results)
-        results.sort(lambda x,y: cmp(max([z[-1] for z in x[1]]),
-                                     max([z[-1] for z in y[1]])))
         for fpath, stats in results:
             print
             print console.blue(fpath)
@@ -42,12 +39,18 @@ class Metrics(SimplePlugin):
         for fpath, stats in results.items():
             if isinstance(stats,dict):
                 stats = stats[fpath.abspath()]
+
             if stats is None: continue
+            if not stats: continue
+
             stats = [ [_type, dotpath, score ]
                       for _type, dotpath, score in stats
                       if score > cutoff ]
             stats.sort(lambda x, y: cmp(x[-1], y[-1]))
             out.append( [ fpath, stats ] )
+        results = filter(lambda x: x[1], results)
+        results.sort(lambda x,y: cmp(max([z[-1] for z in x[1]]),
+                                     max([z[-1] for z in y[1]])))
         return out
 
 
@@ -57,17 +60,14 @@ class Metrics(SimplePlugin):
             passing any of --files, --methods, --classes leaves those types of
             objects out of reporting. """
         out = self._complexity(fname, files=files, methods=methods, classes=classes)
-        #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
         for fpath, results in out.items():
             print '\n', console.blue(fpath), '\n', console.divider(display=False)
-            #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
-            #if isinstance(results,list):
-            #    print results
             if isinstance(results,dict):
                 results = results[results.keys()[0]]
             for _type, dotpath, score in results:
                 print score, console.blue(_type), console.red(dotpath)
             console.divider()
+
     def _complexity(self, *args, **kargs):
         return dict(self._zcomplexity(*args, **kargs))
 

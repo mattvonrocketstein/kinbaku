@@ -5,6 +5,7 @@
 """
 
 import os
+import sys
 import inspect
 
 from kinbaku.tracers import CallTracer
@@ -58,10 +59,10 @@ class Snooper(CallTracer):
             pass#rint "ignoring ",self.func_filename,self.func_name,self.is_nearby(self.func_filename)
         return out
     def handle(self):
-        """ called by CallTracer.__call__, this is the main
+            """ called by CallTracer.__call__, this is the main
             event-responder entry for this tracer """
-        if not self.watched: return
-        else:
+        #if not self.watched: return
+        #else:
             msg = '  In function: "{fname}"\n    {cline}:{cfile} ---> {fline}:{fpath}'
             msg = msg.format(fname = console.red(str(self.func_name)),
                              fline = console.blue(str(self.func_line_no)),
@@ -73,15 +74,22 @@ class Snooper(CallTracer):
 
     def trace_lines(self, frame, event, arg):
         """ called for line return/line events """
+
         self.frame=frame; self.event=event;self.arg=arg
         if event not in ['line','return']: return
         if event=='return':
             return self.trace_return(frame,event,arg)
         co = self.co
         filename = co.co_filename
+        if 'pygments' in filename or 'kinbaku' in filename: return
         msg = 'line {fline}:\t {locals}'
+        try:
+            _locals = str(frame.f_locals)
+        except Exception,e: # error in decimals' __repr__ ??
+            _locals = ":ERROR "+str(e)
+
         msg = msg.format(fname=self.func_name, fline=console.blue(str(self.line_no)),
-                         locals=console.color(str(frame.f_locals))).strip()
+                         locals=console.color(_locals)).strip()
         hdr = console.red('    ::  ')
         print hdr + msg
         return self.trace_lines

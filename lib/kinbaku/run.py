@@ -11,7 +11,7 @@ from path import path
 from rope.refactor.importutils import ImportTools, importinfo, add_import
 from coverage.cmdline import main,CoverageScript
 
-from kinbaku._coverage import FileCoverage #KinbakuFile
+
 from kinbaku.report import console, report
 from kinbaku.codebase import plugin as CodeBase
 from kinbaku.plugin import KinbakuPlugin, publish_to_commandline, str2list
@@ -27,7 +27,8 @@ def trace_and_watch(fpath,watchlst=[], files=[]):
     if fpath not in files: files.append(path(fpath).abspath())
     snoopy = Snooper(names=watchlst,files=files)
     sys.settrace(snoopy);
-    execfile(fpath, dict(__name__='__main__'))
+    execfile(fpath, dict(__file__=fpath,
+                         __name__='__main__'))
     records = snoopy._record
     return records
 
@@ -58,6 +59,27 @@ class CLI(KinbakuPlugin):
         saybye()
         #from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 
+    #def triage_coverage(self,x,y):
+    #    print 'sort',x,y
+    #    return cmp(x[1], y[1].percent_covered)
+
+    @publish_to_commandline
+    def triage(self, directory,triage_algorithm='coverage'):
+        """ NIY """
+        from kinbaku.core import dir2files
+
+        patients = dir2files(directory,python=True)
+        patients = [ KinbakuFile(fpath) for fpath in patients ]
+        patients = [ (kfile.percent_covered, kfile.fname) for kfile in patients ]
+
+        #triage_algorithm = 'triage_' + triage_algorithm
+        #triage_algorithm = getattr(self, triage_algorithm)
+        patients.sort()
+
+        for i in range(len(patients)):
+            #kfile, f_cvg, f_complexity = patients[i]
+            print i, patients[i]
+            #print i, kfile.fname, kfile.percent_covered
 
     @publish_to_commandline
     def cvg(self, fpath, objects=False, lines=False, containers=False, exclude=''):
@@ -81,6 +103,7 @@ class Run(CLI):
     """ """
     def _cvg(self, fpath, exclude=''):
         """ returns header,[ filecoverage_obj, ..] """
+        from kinbaku._coverage import FileCoverage #KinbakuFile
         out     = []
         exclude = str2list(exclude)
         results = KinbakuFile(fpath).run_cvg()

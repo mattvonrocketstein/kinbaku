@@ -11,7 +11,6 @@ from kinbaku.analysis import combine_word_summary
 from kinbaku.analysis import pychecker_helper
 from kinbaku.plugin import KinbakuPlugin
 from kinbaku.plugin import publish_to_commandline
-from kinbaku.util import is_python
 from path import path
 
 
@@ -140,16 +139,5 @@ class CBPlugin(KinbakuPlugin):
     @publish_to_commandline
     def files(self, python=False):
         """ returns a list path() objects """
-        if not self.pth_root or not os.path.exists(self.pth_root):
-            return []
-            #raise UnusableCodeError, "nonexistent path {p}".format(p=self.pth_root)
-        pth_root = path(self.pth_root)
-        if not pth_root.isdir():
-            all_files = [pth_root]
-        else:
-            all_files = pth_root.files()
-        if python:
-            out = filter(is_python, all_files)
-        else:
-            out = all_files
-        return out
+        return Files(self.pth_root)
+from kinbaku.core import dir2files as Files
