@@ -2,6 +2,7 @@
 
     from IPython import Shell; Shell.IPShellEmbed(argv=['-noconfirm_exit'])()
 """
+
 import os
 import StringIO
 
@@ -9,11 +10,10 @@ import compiler, ast
 from coverage.cmdline import main, CoverageScript
 from sourcecodegen.generation import generate_code
 from sourcecodegen.generation import ModuleSourceCodeGenerator
-#from sourcecodegen.generation import ModuleSourceCodeGenerator
 
 from kinbaku.report import console
 from kinbaku._ast import node_has_lineno,walk
-from kinbaku.core import KinbakuFile
+
 
 OLD_BANNER = '----------------------------------------------------------------------------------'
 
@@ -28,6 +28,8 @@ def convert(x):
 def mine_cvg_output(line):
     """ """
     cvg_output_line   = line.split()
+    if not cvg_output_line:
+        return
     miss,  cover      = cvg_output_line[2],cvg_output_line[3]
     fname, statements = cvg_output_line[0],cvg_output_line[1]
     linenos           = ''.join(cvg_output_line[4:]).split(',')
@@ -42,6 +44,7 @@ def mine_cvg_output(line):
 
     return fname, miss, cover, linenos, original_line,statements
 
+from kinbaku.core import KinbakuFile
 class FileCoverage(KinbakuFile):
     """ tracks coverage metadata for a specific file """
     def __init__(self, linenos=[], fname='', original_line='',

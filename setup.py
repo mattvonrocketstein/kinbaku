@@ -21,8 +21,10 @@ except ImportError:
             'kinbaku.plugin',
             'kinbaku.comments',
             'kinbaku.coverage',
+            'kinbaku.run',
         ]
     have_setuptools = False
+
 try:
     from distutils.command.build_py import build_py_2to3 as build_py
 except ImportError:
@@ -36,6 +38,7 @@ if have_setuptools:
                             'kbk-cvg = kinbaku.bin.kbk:coverage', \
                             'kbk-coverage = kinbaku.bin.kbk:coverage', \
                             'kbk-metrics = kinbaku.bin.kbk:metrics', \
+                            'kbk = kinbaku.bin.kbk:run', \
                             'kbk-scope = kinbaku.bin.kbk:scope'], \
                          }, )
 else:
