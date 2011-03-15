@@ -43,14 +43,19 @@ class KinbakuFile(object):
         x = self.fhandle.read()
         if x:
             return x
+        else:
+            self.fhandle.seek(0)
+            self.fhandle.read()
 
     @property
     def ast(self):
         """ """
-        if not self.contents:
+
+        contents = self.contents
+        if not contents:
             return
         try:
-            return compiler.parse(self.contents)
+            return compiler.parse(contents)
         except SyntaxError:
             raise SyntaxError,"Reading file:\n"+self.contents
         except IOError:
