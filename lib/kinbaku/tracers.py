@@ -17,8 +17,9 @@ class PythonFrame(object):
     @property
     def vals(self):
         x = inspect.getargvalues(self.frame)
-        arguments = dict([ [arg, x.locals[arg]] for arg in  x.args ])
-        return arguments
+        return x.args
+        #arguments = dict([ [arg, str(x.locals[arg])] for arg in  x.args ])
+        #return arguments
 
 
     @property

@@ -109,10 +109,11 @@ class PostProcessors(object):
         """ copy imports from original file into test case """
         for fname, tname, generated_test in results:
             oldimports = pygrep(fname, "imports", raw_text=True)
-            newtest  = '""" {label}\n"""\n\n## Begin: Original imports\n'
+            newtest  = '""" {label}\n"""\n\nimport os; {tfile}\n\n## Begin: Original imports\n'
             newtest += '{old_imports}\n## Fin:   Original imports\n\n{gtest}'
             newtest  = newtest.format(label=Dotpath.from_fname(fname),
                                       old_imports = oldimports,
+                                      tfile = "THIS_DIR = os.path.abspath(os.path.split(__file__)[0])",
                                       gtest = generated_test)
             yield fname, tname, newtest
 

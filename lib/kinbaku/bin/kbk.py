@@ -121,10 +121,12 @@ def entry():
 
 def manufacture_shortcut(name ):
     return lambda: handle_main_argument(*(list(PARSER())+[name]))
+
 comments=manufacture_shortcut('comments')
 scope = manufacture_shortcut('scope')
 coverage = manufacture_shortcut('coverage')
 metrics = manufacture_shortcut('metrics')
+run = manufacture_shortcut('run')
 
 
 if __name__=='__main__':
